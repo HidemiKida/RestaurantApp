@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,120 +7,91 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { asianTheme } from '../../styles/asianTheme';
 import { ASIAN_EMOJIS } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
+import reservationService from '../../services/api/reservationService'; // Tu servicio existente
+import { formatError } from '../../utils/helpers';
 
 const ReservationsScreen = ({ navigation }) => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, upcoming, past
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 10,
+    total: 0,
+  });
 
-  // Datos de ejemplo
-  const mockReservations = [
-    {
-      id: 1,
-      restaurant: {
-        name: 'Sakura Sushi',
-        cuisine_type: 'japonesa',
-      },
-      reservation_date: '2025-08-05T19:30:00Z',
-      party_size: 4,
-      status: 'confirmada',
-      table: { table_number: 'Mesa 5' },
-    },
-    {
-      id: 2,
-      restaurant: {
-        name: 'Dragon Palace',
-        cuisine_type: 'china',
-      },
-      reservation_date: '2025-07-28T20:00:00Z',
-      party_size: 2,
-      status: 'completada',
-      table: { table_number: 'Mesa 12' },
-    },
-    {
-      id: 3,
-      restaurant: {
-        name: 'Thai Garden',
-        cuisine_type: 'tailandesa',
-      },
-      reservation_date: '2025-08-10T18:00:00Z',
-      party_size: 6,
-      status: 'pendiente',
-      table: { table_number: 'Mesa 8' },
-    },
-  ];
+  // Recargar reservas cuando la pantalla recibe foco (ej: después de crear una nueva)
+  useFocusEffect(
+    useCallback(() => {
+      loadReservations(1, true);
+    }, [])
+  );
 
-  useEffect(() => {
-    loadReservations();
-  }, []);
-
-  const loadReservations = async () => {
+  const loadReservations = async (page = 1, showLoader = true) => {
     try {
-      setLoading(true);
-      // Simular carga de API
-      setTimeout(() => {
-        setReservations(mockReservations);
-        setLoading(false);
-      }, 1000);
+      if (showLoader && page === 1) {
+        setLoading(true);
+      }
+      setError(null);
+
+      // Usar tu servicio existente
+      const response = await reservationService.getUserReservations({ page });
+
+      if (response.success && response.data) {
+        const reservationsData = response.data.data || response.data;
+        
+        if (page === 1) {
+          setReservations(reservationsData);
+        } else {
+          setReservations(prev => [...prev, ...reservationsData]);
+        }
+
+        // Actualizar paginación si viene en la respuesta
+        if (response.data.pagination || response.data.current_page) {
+          setPagination({
+            current_page: response.data.current_page || page,
+            last_page: response.data.last_page || 1,
+            per_page: response.data.per_page || 10,
+            total: response.data.total || reservationsData.length,
+          });
+        }
+
+        console.log('✅ Reservas cargadas:', reservationsData.length);
+      } else {
+        throw new Error(response.message || 'Error al cargar las reservas');
+      }
     } catch (error) {
-      console.error('Error cargando reservas:', error);
+      console.error('❌ Error loading reservations:', error);
+      const errorMessage = formatError(error);
+      setError(errorMessage);
+      
+      Alert.alert(
+        'Error',
+        errorMessage,
+        [
+          { text: 'Reintentar', onPress: () => loadReservations(page, showLoader) },
+          { text: 'Cancelar', style: 'cancel' }
+        ]
+      );
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    await loadReservations();
-    setRefreshing(false);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmada':
-        return asianTheme.colors.success;
-      case 'pendiente':
-        return asianTheme.colors.warning;
-      case 'cancelada':
-        return asianTheme.colors.error;
-      case 'completada':
-        return asianTheme.colors.secondary.bamboo;
-      default:
-        return asianTheme.colors.grey.medium;
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'confirmada':
-        return 'Confirmada ✅';
-      case 'pendiente':
-        return 'Pendiente ⏳';
-      case 'cancelada':
-        return 'Cancelada ❌';
-      case 'completada':
-        return 'Completada 🎉';
-      default:
-        return status;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    loadReservations(1, false);
   };
 
   const getCuisineEmoji = (cuisineType) => {
@@ -133,22 +104,91 @@ const ReservationsScreen = ({ navigation }) => {
         return '🍜';
       case 'coreana':
         return '🍲';
+      case 'vietnamita':
+        return '🍲';
+      case 'india':
+        return '🍛';
       default:
         return ASIAN_EMOJIS.FOOD;
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmada':
+      case 'confirmed':
+        return asianTheme.colors.success;
+      case 'pendiente':
+      case 'pending':
+        return asianTheme.colors.warning;
+      case 'cancelada':
+      case 'cancelled':
+        return asianTheme.colors.error;
+      case 'completada':
+      case 'completed':
+        return asianTheme.colors.secondary.bamboo;
+      default:
+        return asianTheme.colors.grey.medium;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmada':
+      case 'confirmed':
+        return 'Confirmada';
+      case 'pendiente':
+      case 'pending':
+        return 'Pendiente';
+      case 'cancelada':
+      case 'cancelled':
+        return 'Cancelada';
+      case 'completada':
+      case 'completed':
+        return 'Completada';
+      default:
+        return status || 'Desconocido';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const handleReservationPress = (reservation) => {
+    navigation.navigate('ReservationDetail', { 
+      reservation,
+      onReservationUpdate: (updatedReservation) => {
+        // Actualizar la reserva en la lista cuando se modifique
+        setReservations(prev => 
+          prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+        );
+      }
+    });
+  };
+
   const renderReservation = ({ item }) => (
     <TouchableOpacity
       style={styles.reservationCard}
-      onPress={() => navigation.navigate('ReservationDetail', { reservation: item })}
+      onPress={() => handleReservationPress(item)}
+      activeOpacity={0.7}
     >
       <View style={styles.cardHeader}>
         <View style={styles.restaurantInfo}>
           <Text style={styles.restaurantName}>
-            {getCuisineEmoji(item.restaurant.cuisine_type)} {item.restaurant.name}
+            {getCuisineEmoji(item.restaurant?.cuisine_type)} {item.restaurant?.name}
           </Text>
-          <Text style={styles.tableInfo}>{item.table.table_number}</Text>
+          <Text style={styles.tableInfo}>
+            {item.table?.table_number || `Mesa ${item.table?.id}`}
+          </Text>
         </View>
         
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -176,6 +216,19 @@ const ReservationsScreen = ({ navigation }) => {
             {item.party_size} {item.party_size === 1 ? 'persona' : 'personas'}
           </Text>
         </View>
+
+        {item.special_requests && (
+          <View style={styles.detailRow}>
+            <Ionicons 
+              name="chatbubble-outline" 
+              size={16} 
+              color={asianTheme.colors.secondary.bamboo} 
+            />
+            <Text style={styles.detailText} numberOfLines={1}>
+              {item.special_requests}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.cardFooter}>
@@ -190,17 +243,32 @@ const ReservationsScreen = ({ navigation }) => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>{ASIAN_EMOJIS.BENTO}</Text>
-      <Text style={styles.emptyTitle}>No tienes reservas</Text>
-      <Text style={styles.emptyText}>
-        ¡Explora nuestros restaurantes y haz tu primera reserva!
+      <Text style={styles.emptyEmoji}>{ASIAN_EMOJIS.CALENDAR}</Text>
+      <Text style={styles.emptyTitle}>No tienes reservas aún</Text>
+      <Text style={styles.emptySubtitle}>
+        {error 
+          ? 'Hubo un problema cargando tus reservas' 
+          : 'Explora nuestros restaurantes y haz tu primera reserva'
+        }
       </Text>
-      <AsianButton
-        title="Explorar Restaurantes"
-        onPress={() => navigation.navigate('Restaurants')}
-        variant="primary"
-        style={styles.exploreButton}
-      />
+      
+      {error ? (
+        <AsianButton
+          title="Reintentar"
+          onPress={() => loadReservations()}
+          variant="outline"
+          size="small"
+          style={styles.retryButton}
+        />
+      ) : (
+        <AsianButton
+          title={`Explorar Restaurantes ${ASIAN_EMOJIS.RESTAURANT}`}
+          onPress={() => navigation.navigate('Restaurants')}
+          variant="primary"
+          size="medium"
+          style={styles.exploreButton}
+        />
+      )}
     </View>
   );
 
@@ -208,7 +276,7 @@ const ReservationsScreen = ({ navigation }) => {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={asianTheme.colors.primary.red} />
-        <Text style={styles.loadingText}>Cargando reservas...</Text>
+        <Text style={styles.loadingText}>Cargando tus reservas...</Text>
       </View>
     );
   }
@@ -216,29 +284,47 @@ const ReservationsScreen = ({ navigation }) => {
   return (
     <ResponsiveContainer>
       <View style={styles.container}>
-        {reservations.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <FlatList
-            data={reservations}
-            renderItem={renderReservation}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[asianTheme.colors.primary.red]}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          />
+        {/* Header con estadísticas */}
+        {reservations.length > 0 && (
+          <View style={styles.headerStats}>
+            <Text style={styles.statsText}>
+              {pagination.total || reservations.length} reserva{(pagination.total || reservations.length) !== 1 ? 's' : ''} total{(pagination.total || reservations.length) !== 1 ? 'es' : ''}
+            </Text>
+          </View>
         )}
+
+        <FlatList
+          data={reservations}
+          renderItem={renderReservation}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={[
+            styles.listContainer,
+            reservations.length === 0 && styles.emptyListContainer
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[asianTheme.colors.primary.red]}
+              tintColor={asianTheme.colors.primary.red}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyState}
+          // Paginación infinita (si la necesitas más adelante)
+          onEndReached={() => {
+            if (pagination.current_page < pagination.last_page && !loading) {
+              loadReservations(pagination.current_page + 1, false);
+            }
+          }}
+          onEndReachedThreshold={0.1}
+        />
       </View>
     </ResponsiveContainer>
   );
 };
 
+// Los estilos se mantienen iguales...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -254,35 +340,62 @@ const styles = StyleSheet.create({
 
   loadingText: {
     marginTop: asianTheme.spacing.md,
+    fontSize: 16,
     color: asianTheme.colors.secondary.bamboo,
+  },
+
+  headerStats: {
+    backgroundColor: 'white',
+    padding: asianTheme.spacing.md,
+    marginHorizontal: asianTheme.spacing.md,
+    marginTop: asianTheme.spacing.md,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+
+  statsText: {
+    fontSize: 14,
+    color: asianTheme.colors.secondary.bamboo,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 
   listContainer: {
     padding: asianTheme.spacing.md,
+    paddingTop: asianTheme.spacing.sm,
+  },
+
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
 
   reservationCard: {
     backgroundColor: 'white',
     borderRadius: 12,
     marginBottom: asianTheme.spacing.md,
-    overflow: 'hidden',
-    elevation: 3,
+    padding: asianTheme.spacing.lg,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 3,
   },
 
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.sm,
+    marginBottom: asianTheme.spacing.md,
   },
 
   restaurantInfo: {
     flex: 1,
+    marginRight: asianTheme.spacing.md,
   },
 
   restaurantName: {
@@ -295,33 +408,32 @@ const styles = StyleSheet.create({
   tableInfo: {
     fontSize: 14,
     color: asianTheme.colors.secondary.bamboo,
+    fontWeight: '500',
   },
 
   statusBadge: {
     paddingHorizontal: asianTheme.spacing.sm,
     paddingVertical: asianTheme.spacing.xs,
-    borderRadius: 6,
+    borderRadius: 12,
   },
 
   statusText: {
+    color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
-    color: 'white',
   },
 
   cardBody: {
-    paddingHorizontal: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.sm,
+    gap: asianTheme.spacing.sm,
   },
 
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.xs,
+    gap: asianTheme.spacing.sm,
   },
 
   detailText: {
-    marginLeft: asianTheme.spacing.sm,
     fontSize: 14,
     color: asianTheme.colors.secondary.bamboo,
     flex: 1,
@@ -329,15 +441,14 @@ const styles = StyleSheet.create({
 
   cardFooter: {
     alignItems: 'flex-end',
-    paddingHorizontal: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.md,
+    marginTop: asianTheme.spacing.sm,
   },
 
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: asianTheme.spacing.xl,
+    justifyContent: 'center',
+    paddingVertical: asianTheme.spacing.xxl,
+    paddingHorizontal: asianTheme.spacing.xl,
   },
 
   emptyEmoji: {
@@ -346,22 +457,27 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: asianTheme.colors.primary.black,
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: asianTheme.spacing.sm,
     textAlign: 'center',
   },
 
-  emptyText: {
+  emptySubtitle: {
     fontSize: 16,
     color: asianTheme.colors.secondary.bamboo,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
     marginBottom: asianTheme.spacing.xl,
   },
 
+  retryButton: {
+    marginTop: asianTheme.spacing.md,
+  },
+
   exploreButton: {
+    marginTop: asianTheme.spacing.md,
     minWidth: 200,
   },
 });

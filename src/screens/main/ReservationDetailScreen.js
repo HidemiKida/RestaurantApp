@@ -1,31 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Alert,
-  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { asianTheme } from '../../styles/asianTheme';
 import { ASIAN_EMOJIS } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
+import reservationService from '../../services/api/reservationService'; // Tu servicio existente
+import { formatError } from '../../utils/helpers';
 
 const ReservationDetailScreen = ({ route, navigation }) => {
-  const { reservation } = route.params;
+  const { reservation: initialReservation, onReservationUpdate, fromBooking } = route.params;
+  const [reservation, setReservation] = useState(initialReservation);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Cargar detalles actualizados de la reserva
+  useEffect(() => {
+    if (reservation.id && !fromBooking) {
+      loadReservationDetails();
+    }
+  }, []);
+
+  const loadReservationDetails = async () => {
+    try {
+      setDetailLoading(true);
+      const response = await reservationService.getReservationDetail(reservation.id);
+      
+      if (response.success && response.data) {
+        const updatedReservation = response.data.data || response.data;
+        setReservation(updatedReservation);
+        
+        // Notificar a la pantalla padre si hay callback
+        if (onReservationUpdate) {
+          onReservationUpdate(updatedReservation);
+        }
+        
+        console.log('✅ Detalles de reservación actualizados');
+      }
+    } catch (error) {
+      console.error('❌ Error cargando detalles:', error);
+      // No mostrar error si solo es para refrescar datos
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'confirmada':
+      case 'confirmed':
         return asianTheme.colors.success;
       case 'pendiente':
+      case 'pending':
         return asianTheme.colors.warning;
       case 'cancelada':
+      case 'cancelled':
         return asianTheme.colors.error;
       case 'completada':
+      case 'completed':
         return asianTheme.colors.secondary.bamboo;
       default:
         return asianTheme.colors.grey.medium;
@@ -33,32 +72,21 @@ const ReservationDetailScreen = ({ route, navigation }) => {
   };
 
   const getStatusText = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'confirmada':
+      case 'confirmed':
         return 'Confirmada ✅';
       case 'pendiente':
+      case 'pending':
         return 'Pendiente ⏳';
       case 'cancelada':
+      case 'cancelled':
         return 'Cancelada ❌';
       case 'completada':
+      case 'completed':
         return 'Completada 🎉';
       default:
-        return status;
-    }
-  };
-
-  const getCuisineEmoji = (cuisineType) => {
-    switch (cuisineType?.toLowerCase()) {
-      case 'japonesa':
-        return '🍣';
-      case 'china':
-        return '🥟';
-      case 'tailandesa':
-        return '🍜';
-      case 'coreana':
-        return '🍲';
-      default:
-        return ASIAN_EMOJIS.FOOD;
+        return status || 'Desconocido';
     }
   };
 
@@ -80,6 +108,25 @@ const ReservationDetailScreen = ({ route, navigation }) => {
     });
   };
 
+  const getCuisineEmoji = (cuisineType) => {
+    switch (cuisineType?.toLowerCase()) {
+      case 'japonesa':
+        return '🍣';
+      case 'china':
+        return '🥟';
+      case 'tailandesa':
+        return '🍜';
+      case 'coreana':
+        return '🍲';
+      case 'vietnamita':
+        return '🍲';
+      case 'india':
+        return '🍛';
+      default:
+        return ASIAN_EMOJIS.FOOD;
+    }
+  };
+
   const isUpcoming = () => {
     const reservationDate = new Date(reservation.reservation_date);
     const now = new Date();
@@ -87,10 +134,14 @@ const ReservationDetailScreen = ({ route, navigation }) => {
   };
 
   const canCancel = () => {
-    if (reservation.status === 'cancelada' || reservation.status === 'completada') {
+    // No se puede cancelar si ya está cancelada o completada
+    const status = reservation.status?.toLowerCase();
+    if (status === 'cancelada' || status === 'cancelled' || 
+        status === 'completada' || status === 'completed') {
       return false;
     }
     
+    // Verificar si quedan más de 2 horas
     const reservationDate = new Date(reservation.reservation_date);
     const now = new Date();
     const hoursUntilReservation = (reservationDate - now) / (1000 * 60 * 60);
@@ -117,26 +168,63 @@ const ReservationDetailScreen = ({ route, navigation }) => {
     try {
       setIsLoading(true);
       
-      // Aquí harías la llamada a tu API para cancelar
-      console.log('Cancelando reserva:', reservation.id);
-      
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      Alert.alert(
-        'Reserva Cancelada',
-        'Tu reserva ha sido cancelada exitosamente.',
-        [
-          {
-            text: 'Entendido',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      // Usar tu servicio existente para cancelar
+      const response = await reservationService.cancelReservation(reservation.id);
+
+      if (response.success) {
+        // Actualizar el estado local
+        const cancelledReservation = {
+          ...reservation,
+          status: 'cancelada'
+        };
+        setReservation(cancelledReservation);
+
+        // Notificar a la pantalla padre
+        if (onReservationUpdate) {
+          onReservationUpdate(cancelledReservation);
+        }
+
+        Alert.alert(
+          'Reserva Cancelada',
+          response.message || 'Tu reserva ha sido cancelada exitosamente.',
+          [
+            {
+              text: 'Entendido',
+              onPress: () => {
+                // Si vino del booking, regresar a la lista de reservas
+                if (fromBooking) {
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      { name: 'Main' },
+                      { name: 'Reservations' }
+                    ],
+                  });
+                } else {
+                  navigation.goBack();
+                }
+              },
+            },
+          ]
+        );
+        
+        console.log('✅ Reservación cancelada exitosamente');
+      } else {
+        throw new Error(response.message || 'Error al cancelar la reserva');
+      }
       
     } catch (error) {
-      console.error('Error cancelando reserva:', error);
-      Alert.alert('Error', 'No se pudo cancelar la reserva. Intenta nuevamente.');
+      console.error('❌ Error cancelando reserva:', error);
+      const errorMessage = formatError(error);
+      
+      Alert.alert(
+        'Error al Cancelar', 
+        errorMessage,
+        [
+          { text: 'Reintentar', onPress: confirmCancel },
+          { text: 'Cerrar', style: 'cancel' }
+        ]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +233,7 @@ const ReservationDetailScreen = ({ route, navigation }) => {
   const handleContact = () => {
     Alert.alert(
       'Contactar Restaurante',
-      `¿Cómo te gustaría contactar a ${reservation.restaurant.name}?`,
+      `¿Cómo te gustaría contactar a ${reservation.restaurant?.name}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Llamar', onPress: () => Alert.alert('Función próximamente') },
@@ -153,6 +241,35 @@ const ReservationDetailScreen = ({ route, navigation }) => {
       ]
     );
   };
+
+  const getTimeUntilReservation = () => {
+    const reservationDate = new Date(reservation.reservation_date);
+    const now = new Date();
+    const diffMs = reservationDate - now;
+    
+    if (diffMs <= 0) return null;
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) {
+      return `En ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+    } else if (diffHours > 0) {
+      return `En ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+    } else {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `En ${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`;
+    }
+  };
+
+  if (detailLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={asianTheme.colors.primary.red} />
+        <Text style={styles.loadingText}>Cargando detalles...</Text>
+      </View>
+    );
+  }
 
   return (
     <ResponsiveContainer>
@@ -163,30 +280,47 @@ const ReservationDetailScreen = ({ route, navigation }) => {
             <Text style={styles.statusText}>{getStatusText(reservation.status)}</Text>
           </View>
           
-          {isUpcoming() && reservation.status === 'confirmada' && (
+          {isUpcoming() && (reservation.status?.toLowerCase() === 'confirmada' || reservation.status?.toLowerCase() === 'confirmed') && (
             <View style={styles.upcomingBadge}>
               <Ionicons name="time-outline" size={16} color="white" />
-              <Text style={styles.upcomingText}>Próxima reserva</Text>
+              <Text style={styles.upcomingText}>{getTimeUntilReservation()}</Text>
             </View>
           )}
         </View>
 
         {/* Información del restaurante */}
-        <View style={styles.restaurantCard}>
-          <View style={styles.restaurantHeader}>
-            <Text style={styles.restaurantName}>
-              {getCuisineEmoji(reservation.restaurant.cuisine_type)} {reservation.restaurant.name}
-            </Text>
-            <TouchableOpacity onPress={handleContact} style={styles.contactButton}>
-              <Ionicons name="chatbubble-outline" size={20} color={asianTheme.colors.primary.red} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>
+            {getCuisineEmoji(reservation.restaurant?.cuisine_type)} {reservation.restaurant?.name}
+          </Text>
           
-          <Text style={styles.cuisineType}>Cocina {reservation.restaurant.cuisine_type}</Text>
+          {reservation.restaurant?.address && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="location" size={20} color={asianTheme.colors.primary.red} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Dirección</Text>
+                <Text style={styles.detailValue}>{reservation.restaurant.address}</Text>
+              </View>
+            </View>
+          )}
+
+          {reservation.restaurant?.phone && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="call" size={20} color={asianTheme.colors.primary.red} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Teléfono</Text>
+                <Text style={styles.detailValue}>{reservation.restaurant.phone}</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Detalles de la reserva */}
-        <View style={styles.detailsCard}>
+        <View style={styles.infoCard}>
           <Text style={styles.cardTitle}>
             {ASIAN_EMOJIS.CALENDAR} Detalles de la reserva
           </Text>
@@ -217,7 +351,9 @@ const ReservationDetailScreen = ({ route, navigation }) => {
             </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Mesa</Text>
-              <Text style={styles.detailValue}>{reservation.table.table_number}</Text>
+              <Text style={styles.detailValue}>
+                {reservation.table?.table_number || `Mesa ${reservation.table?.id}`}
+              </Text>
             </View>
           </View>
 
@@ -291,6 +427,17 @@ const ReservationDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Contactar restaurante */}
+        <View style={styles.actionsCard}>
+          <AsianButton
+            title={`Contactar Restaurante ${ASIAN_EMOJIS.PHONE}`}
+            onPress={handleContact}
+            variant="outline"
+            style={styles.actionButton}
+            icon={<Ionicons name="call-outline" size={20} color={asianTheme.colors.primary.red} />}
+          />
+        </View>
+
         {/* Reservar nuevamente */}
         <View style={styles.actionsCard}>
           <AsianButton
@@ -309,6 +456,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: asianTheme.colors.secondary.pearl,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: asianTheme.colors.secondary.pearl,
+  },
+
+  loadingText: {
+    marginTop: asianTheme.spacing.md,
+    fontSize: 16,
+    color: asianTheme.colors.secondary.bamboo,
   },
 
   statusCard: {
@@ -353,46 +513,10 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 
-  restaurantCard: {
+  infoCard: {
     backgroundColor: 'white',
-    marginHorizontal: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.md,
-    borderRadius: 12,
-    padding: asianTheme.spacing.lg,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-
-  restaurantHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: asianTheme.spacing.xs,
-  },
-
-  restaurantName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: asianTheme.colors.primary.black,
-    flex: 1,
-  },
-
-  contactButton: {
-    padding: asianTheme.spacing.sm,
-  },
-
-  cuisineType: {
-    fontSize: 14,
-    color: asianTheme.colors.secondary.bamboo,
-  },
-
-  detailsCard: {
-    backgroundColor: 'white',
-    marginHorizontal: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.md,
+    margin: asianTheme.spacing.md,
+    marginTop: 0,
     borderRadius: 12,
     padding: asianTheme.spacing.lg,
     elevation: 2,
@@ -418,7 +542,8 @@ const styles = StyleSheet.create({
   detailIcon: {
     width: 40,
     alignItems: 'center',
-    marginTop: 2,
+    marginRight: asianTheme.spacing.sm,
+    paddingTop: 2,
   },
 
   detailContent: {
@@ -433,22 +558,8 @@ const styles = StyleSheet.create({
 
   detailValue: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: asianTheme.colors.primary.black,
-    lineHeight: 22,
-  },
-
-  infoCard: {
-    backgroundColor: 'white',
-    marginHorizontal: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.md,
-    borderRadius: 12,
-    padding: asianTheme.spacing.lg,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    fontWeight: '500',
   },
 
   infoItem: {
@@ -462,12 +573,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: asianTheme.colors.secondary.bamboo,
     flex: 1,
-    lineHeight: 20,
   },
 
   actionsCard: {
-    paddingHorizontal: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.md,
+    backgroundColor: 'white',
+    margin: asianTheme.spacing.md,
+    marginTop: 0,
+    borderRadius: 12,
+    padding: asianTheme.spacing.lg,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 
   actionButton: {
