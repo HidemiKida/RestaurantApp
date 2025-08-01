@@ -1,7 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import ProfileScreen from '../../screens/main/ProfileScreen';
-import EditProfileScreen from '../../screens/main/EditProfileScreen';
 import SettingsScreen from '../../screens/main/SettingsScreen';
 import { asianTheme } from '../../styles/asianTheme';
 

@@ -14,10 +14,10 @@ import ProfileScreen from '../screens/main/ProfileScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 
 // Stack Navigators
-import RestaurantStack from './stacks/RestaurantStack';
-import ReservationStack from './stacks/ReservationStack';
-import ProfileStack from './stacks/ProfileStack';
-import AdminStack from './stacks/AdminStack';
+import RestaurantStack from './stack/RestaurantStack';
+import ReservationStack from './stack/ReservationStack';
+import ProfileStack from './stack/ProfileStack';
+import AdminStack from './stack/AdminStack';
 
 const Tab = createBottomTabNavigator();
 
