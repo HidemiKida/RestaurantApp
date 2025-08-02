@@ -3,14 +3,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
+
 const Stack = createStackNavigator();
 
 const AuthNavigator = () => {
   return (
-    <Stack.Navigator 
-      screenOptions={{ 
+    // IMPORTANTE: No incluir NavigationContainer aquí
+    <Stack.Navigator
+      initialRouteName="Login"
+      screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: 'transparent' }
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

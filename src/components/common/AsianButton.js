@@ -1,20 +1,22 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
-import { 
-  getThemeProperty, 
-  getColor, 
-  getBorderRadius, 
-  getSpacing, 
-  getShadow 
-} from '../../styles/themeUtils';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+  View,
+  Platform
+} from 'react-native';
+import { getColor, getBorderRadius, getSpacing, getShadow } from '../../styles/themeUtils';
 
 const { width } = Dimensions.get('window');
 
 const AsianButton = ({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline
-  size = 'medium', // small, medium, large
+  variant = 'primary',
+  size = 'medium',
   disabled = false,
   loading = false,
   icon,
@@ -34,6 +36,8 @@ const AsianButton = ({
     !fullWidth && styles[deviceType],
     disabled && styles.disabled,
     getShadow('small'),
+    // Añadir estilo especial para web
+    Platform.OS === 'web' && styles.webButton,
     style,
   ];
 
@@ -42,31 +46,53 @@ const AsianButton = ({
     styles[`${variant}Text`],
     styles[`${size}Text`],
     disabled && styles.disabledText,
+    // Añadir estilo especial para web
+    Platform.OS === 'web' && styles.webButtonText,
     textStyle,
   ];
 
+  // Efecto hover para web
+  const [isHovered, setIsHovered] = React.useState(false);
+  
+  // Props específicos para web
+  const webProps = Platform.OS === 'web' ? {
+    onMouseEnter: () => setIsHovered(true),
+    onMouseLeave: () => setIsHovered(false),
+  } : {};
+
   return (
     <TouchableOpacity
-      style={buttonStyle}
+      style={[
+        buttonStyle,
+        isHovered && styles.hoverEffect,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      pressRetentionOffset={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      {...webProps}
       {...props}
     >
       {loading ? (
-        <>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator 
-            color={variant === 'primary' ? getColor('white') : getColor('primary.red')} 
+            color={variant === 'primary' ? 'white' : getColor('primary.red')} 
             size="small"
             style={styles.loadingIndicator}
           />
           {loadingText && <Text style={textStyles}>{loadingText}</Text>}
-        </>
+        </View>
       ) : (
-        <>
+        <View style={styles.contentContainer}>
           {icon && <View style={styles.iconContainer}>{icon}</View>}
           <Text style={textStyles}>{title}</Text>
-        </>
+        </View>
+      )}
+      
+      {/* Decoración oriental */}
+      {variant === 'primary' && !disabled && (
+        <View style={styles.decoration}/>
       )}
     </TouchableOpacity>
   );
@@ -78,6 +104,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: getBorderRadius('md'),
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  
+  // Contenedor para alinear contenido
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Variantes
@@ -139,7 +174,7 @@ const styles = StyleSheet.create({
   },
   
   primaryText: {
-    color: getColor('white'),
+    color: 'white',
     fontSize: 16,
   },
   secondaryText: {
@@ -165,13 +200,51 @@ const styles = StyleSheet.create({
     color: getColor('grey.dark'),
   },
   
+  // Indicadores de carga
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadingIndicator: {
     marginRight: getSpacing('sm'),
   },
   
   iconContainer: {
     marginRight: getSpacing('sm'),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  
+  // Estilos específicos para web
+  webButton: {
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    userSelect: 'none',
+  },
+  
+  webButtonText: {
+    fontFamily: "'Noto Sans JP', sans-serif",
+  },
+  
+  hoverEffect: {
+    opacity: 0.9,
+    transform: [{translateY: -2}],
+  },
+  
+  // Decoración oriental (bordes estilo chino)
+  decoration: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: getColor('primary.gold'),
+    opacity: 0.8,
+  }
 });
 
 export default AsianButton;
