@@ -5,8 +5,7 @@ import { useAuth } from '../context/auth/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import LoadingScreen from '../screens/LoadingScreen';
-import ManageReservationsScreen from '../screens/ManageReservationsScreen';
-import ReservationDetailScreen from '../screens/ReservationDetailScreen';
+
 
 
 const Stack = createStackNavigator();
@@ -30,20 +29,5 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
-const ReservationStack = createStackNavigator({
-  ManageReservations: {
-    screen: ManageReservationsScreen,
-    navigationOptions: {
-      headerShown: false,
-    }
-  },
-  ReservationDetail: {
-    screen: ReservationDetailScreen,
-    navigationOptions: {
-      title: 'Detalles de Reserva',
-    }
-  },
-  // También deberás agregar las pantallas de edición y creación de reservas
-});
 
 export default AppNavigator;
