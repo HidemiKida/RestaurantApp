@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
 
   roleBadge: {
-    backgroundColor: asianTheme.colors.accent.gold,
+    backgroundColor: asianTheme.colors.primary.gold, // CORREGIDO: era "accent.gold"
     paddingHorizontal: asianTheme.spacing.md,
     paddingVertical: asianTheme.spacing.xs,
     borderRadius: 20,

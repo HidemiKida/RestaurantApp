@@ -500,7 +500,8 @@ const styles = StyleSheet.create({
   upcomingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: asianTheme.colors.accent.gold,
+    // Cambiado de asianTheme.colors.accent.gold a asianTheme.colors.primary.gold
+    backgroundColor: asianTheme.colors.primary.gold,
     paddingHorizontal: asianTheme.spacing.md,
     paddingVertical: asianTheme.spacing.xs,
     borderRadius: 15,

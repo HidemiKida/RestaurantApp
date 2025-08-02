@@ -11,6 +11,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import { useAuth } from '../../context/auth/AuthContext';
 import { validators, formatError } from '../../utils/helpers';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
@@ -131,7 +139,7 @@ const EditProfileScreen = ({ navigation }) => {
                 value={formData.name}
                 onChangeText={(text) => handleInputChange('name', text)}
                 error={formErrors.name}
-                leftIcon="person"
+                leftIcon={<Ionicons name="person" size={20} color={getColor('secondary.bamboo')} />}
               />
             </View>
             
@@ -143,7 +151,7 @@ const EditProfileScreen = ({ navigation }) => {
                 value={formData.email}
                 onChangeText={(text) => handleInputChange('email', text)}
                 error={formErrors.email}
-                leftIcon="mail"
+                leftIcon={<Ionicons name="mail" size={20} color={getColor('secondary.bamboo')} />}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -157,7 +165,7 @@ const EditProfileScreen = ({ navigation }) => {
                 value={formData.phone}
                 onChangeText={(text) => handleInputChange('phone', text)}
                 error={formErrors.phone}
-                leftIcon="call"
+                leftIcon={<Ionicons name="call" size={20} color={getColor('secondary.bamboo')} />}
                 keyboardType="phone-pad"
               />
             </View>
@@ -169,14 +177,15 @@ const EditProfileScreen = ({ navigation }) => {
               onPress={handleUpdateProfile}
               loading={loading}
               loadingText="Guardando..."
-              icon="save-outline"
+              icon={<Ionicons name="save-outline" size={20} color="white" />}
+              variant="primary"
             />
             
             <AsianButton
               title="Cancelar"
               onPress={() => navigation.goBack()}
-              type="secondary"
-              icon="close-circle-outline"
+              variant="secondary"
+              icon={<Ionicons name="close-circle-outline" size={20} color={getColor('primary.black')} />}
             />
           </View>
         </ScrollView>
@@ -188,60 +197,60 @@ const EditProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.xxl,
+    padding: getSpacing('md'),
+    paddingBottom: getSpacing('xxl'),
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   avatarContainer: {
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: asianTheme.colors.primary.red,
+    backgroundColor: getColor('primary.red'),
     justifyContent: 'center',
     alignItems: 'center',
-    ...asianTheme.shadow.md,
+    ...getShadow('medium'),
   },
   avatarText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: asianTheme.colors.white,
+    color: 'white',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginBottom: asianTheme.spacing.sm,
+    color: getColor('primary.red'),
+    marginBottom: getSpacing('sm'),
   },
   formSection: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    padding: asianTheme.spacing.lg,
-    ...asianTheme.shadow.md,
-    marginBottom: asianTheme.spacing.lg,
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
+    ...getShadow('medium'),
+    marginBottom: getSpacing('lg'),
   },
   formGroup: {
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: asianTheme.colors.secondary.bamboo,
-    marginBottom: asianTheme.spacing.xs,
+    color: getColor('secondary.bamboo'),
+    marginBottom: getSpacing('xs'),
   },
   actionsContainer: {
-    gap: asianTheme.spacing.md,
+    gap: getSpacing('md'),
   },
 });
 

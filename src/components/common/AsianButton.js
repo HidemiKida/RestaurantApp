@@ -1,6 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
-import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getThemeProperty, 
+  getColor, 
+  getBorderRadius, 
+  getSpacing, 
+  getShadow 
+} from '../../styles/themeUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -12,8 +18,10 @@ const AsianButton = ({
   disabled = false,
   loading = false,
   icon,
+  fullWidth = false,
   style,
   textStyle,
+  loadingText,
   ...props
 }) => {
   const deviceType = width < 768 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop';
@@ -22,8 +30,10 @@ const AsianButton = ({
     styles.base,
     styles[variant],
     styles[size],
-    styles[deviceType],
+    fullWidth && styles.fullWidth,
+    !fullWidth && styles[deviceType],
     disabled && styles.disabled,
+    getShadow('small'),
     style,
   ];
 
@@ -44,13 +54,17 @@ const AsianButton = ({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator 
-          color={variant === 'primary' ? asianTheme.colors.secondary.pearl : asianTheme.colors.primary.red} 
-          size="small"
-        />
+        <>
+          <ActivityIndicator 
+            color={variant === 'primary' ? getColor('white') : getColor('primary.red')} 
+            size="small"
+            style={styles.loadingIndicator}
+          />
+          {loadingText && <Text style={textStyles}>{loadingText}</Text>}
+        </>
       ) : (
         <>
-          {icon && icon}
+          {icon && <View style={styles.iconContainer}>{icon}</View>}
           <Text style={textStyles}>{title}</Text>
         </>
       )}
@@ -63,41 +77,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: asianTheme.borders.radius.medium,
-    ...asianTheme.shadows.small,
+    borderRadius: getBorderRadius('md'),
   },
   
   // Variantes
   primary: {
-    backgroundColor: asianTheme.colors.primary.red,
+    backgroundColor: getColor('primary.red'),
   },
   secondary: {
-    backgroundColor: asianTheme.colors.primary.gold,
+    backgroundColor: getColor('primary.gold'),
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: asianTheme.colors.primary.red,
+    borderColor: getColor('primary.red'),
   },
   
   // Tamaños
   small: {
-    paddingHorizontal: asianTheme.spacing.md,
-    paddingVertical: asianTheme.spacing.sm,
+    paddingHorizontal: getSpacing('md'),
+    paddingVertical: getSpacing('sm'),
     minHeight: 36,
   },
   medium: {
-    paddingHorizontal: asianTheme.spacing.lg,
-    paddingVertical: asianTheme.spacing.md,
+    paddingHorizontal: getSpacing('lg'),
+    paddingVertical: getSpacing('md'),
     minHeight: 48,
   },
   large: {
-    paddingHorizontal: asianTheme.spacing.xl,
-    paddingVertical: asianTheme.spacing.lg,
+    paddingHorizontal: getSpacing('xl'),
+    paddingVertical: getSpacing('lg'),
     minHeight: 56,
   },
   
   // Responsivo
+  fullWidth: {
+    width: '100%',
+  },
   mobile: {
     width: '100%',
   },
@@ -112,41 +128,49 @@ const styles = StyleSheet.create({
   
   // Estado deshabilitado
   disabled: {
-    backgroundColor: asianTheme.colors.grey.medium,
+    backgroundColor: getColor('grey.medium'),
     opacity: 0.6,
   },
   
   // Estilos de texto
   text: {
-    fontWeight: asianTheme.typography.weights.semiBold,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   
   primaryText: {
-    color: asianTheme.colors.secondary.pearl,
-    fontSize: asianTheme.typography.sizes.md,
+    color: getColor('white'),
+    fontSize: 16,
   },
   secondaryText: {
-    color: asianTheme.colors.primary.black,
-    fontSize: asianTheme.typography.sizes.md,
+    color: getColor('primary.black'),
+    fontSize: 16,
   },
   outlineText: {
-    color: asianTheme.colors.primary.red,
-    fontSize: asianTheme.typography.sizes.md,
+    color: getColor('primary.red'),
+    fontSize: 16,
   },
   
   smallText: {
-    fontSize: asianTheme.typography.sizes.sm,
+    fontSize: 14,
   },
   mediumText: {
-    fontSize: asianTheme.typography.sizes.md,
+    fontSize: 16,
   },
   largeText: {
-    fontSize: asianTheme.typography.sizes.lg,
+    fontSize: 18,
   },
   
   disabledText: {
-    color: asianTheme.colors.grey.dark,
+    color: getColor('grey.dark'),
+  },
+  
+  loadingIndicator: {
+    marginRight: getSpacing('sm'),
+  },
+  
+  iconContainer: {
+    marginRight: getSpacing('sm'),
   },
 });
 

@@ -8,15 +8,24 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { asianTheme } from '../../styles/asianTheme';
-import { ASIAN_EMOJIS } from '../../utils/constants';
-import ResponsiveContainer from '../../components/common/ResponsiveContainer';
-import AsianButton from '../../components/common/AsianButton';
-import adminService from '../../services/api/adminService';
-import { formatError } from '../../utils/helpers';
+import { asianTheme } from '../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../styles/themeUtils';
+import { ASIAN_EMOJIS } from '../utils/constants';
+import ResponsiveContainer from '../components/common/ResponsiveContainer';
+import AsianButton from '../components/common/AsianButton';
+import adminService from '../services/api/adminService';
+import { formatError } from '../utils/helpers';
 
 const ManageReservationsScreen = ({ navigation }) => {
   const [reservations, setReservations] = useState([]);
@@ -103,18 +112,18 @@ const ManageReservationsScreen = ({ navigation }) => {
     switch (status?.toLowerCase()) {
       case 'confirmada':
       case 'confirmed':
-        return asianTheme.colors.success;
+        return getColor('success');
       case 'pendiente':
       case 'pending':
-        return asianTheme.colors.warning;
+        return getColor('warning');
       case 'cancelada':
       case 'cancelled':
-        return asianTheme.colors.error;
+        return getColor('error');
       case 'completada':
       case 'completed':
-        return asianTheme.colors.secondary.bamboo;
+        return getColor('secondary.bamboo');
       default:
-        return asianTheme.colors.grey.medium;
+        return getColor('grey.medium');
     }
   };
 
@@ -160,7 +169,7 @@ const ManageReservationsScreen = ({ navigation }) => {
       
       <View style={styles.cardBody}>
         <View style={styles.clientInfo}>
-          <Ionicons name="person" size={16} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="person" size={16} color={getColor('secondary.bamboo')} />
           <Text style={styles.clientName}>
             {item.user?.name || 'Cliente'}
           </Text>
@@ -168,14 +177,14 @@ const ManageReservationsScreen = ({ navigation }) => {
         
         <View style={styles.reservationDetail}>
           <View style={styles.detailRow}>
-            <Ionicons name="people" size={16} color={asianTheme.colors.secondary.bamboo} />
+            <Ionicons name="people" size={16} color={getColor('secondary.bamboo')} />
             <Text style={styles.detailText}>
               {item.party_size} {item.party_size === 1 ? 'persona' : 'personas'}
             </Text>
           </View>
           
           <View style={styles.detailRow}>
-            <Ionicons name="restaurant" size={16} color={asianTheme.colors.secondary.bamboo} />
+            <Ionicons name="restaurant" size={16} color={getColor('secondary.bamboo')} />
             <Text style={styles.detailText}>
               Mesa #{item.table?.number || 'N/A'}
             </Text>
@@ -195,7 +204,7 @@ const ManageReservationsScreen = ({ navigation }) => {
           style={styles.actionButton}
           onPress={() => navigation.navigate('EditReservation', { reservation: item })}
         >
-          <Ionicons name="create-outline" size={18} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="create-outline" size={18} color={getColor('secondary.bamboo')} />
           <Text style={styles.actionText}>Editar</Text>
         </TouchableOpacity>
         
@@ -206,8 +215,8 @@ const ManageReservationsScreen = ({ navigation }) => {
             Alert.alert('Implementar', 'Función para confirmar reserva');
           }}
         >
-          <Ionicons name="checkmark-circle-outline" size={18} color={asianTheme.colors.success} />
-          <Text style={[styles.actionText, { color: asianTheme.colors.success }]}>Confirmar</Text>
+          <Ionicons name="checkmark-circle-outline" size={18} color={getColor('success')} />
+          <Text style={[styles.actionText, { color: getColor('success') }]}>Confirmar</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -223,16 +232,16 @@ const ManageReservationsScreen = ({ navigation }) => {
           
           <AsianButton
             title="Nueva Reserva"
-            icon="add-circle-outline"
             onPress={handleCreateReservation}
-            type="primary"
+            variant="primary"
             size="small"
+            icon={<Ionicons name="add-circle-outline" size={18} color="white" />}
           />
         </View>
         
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={asianTheme.colors.primary.red} />
+            <ActivityIndicator size="large" color={getColor('primary.red')} />
             <Text style={styles.loadingText}>Cargando reservas...</Text>
           </View>
         ) : (
@@ -245,21 +254,21 @@ const ManageReservationsScreen = ({ navigation }) => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={[asianTheme.colors.primary.red]}
-                tintColor={asianTheme.colors.primary.red}
+                colors={[getColor('primary.red')]}
+                tintColor={getColor('primary.red')}
               />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="calendar" size={64} color={asianTheme.colors.grey.light} />
+                <Ionicons name="calendar" size={64} color={getColor('grey.light')} />
                 <Text style={styles.emptyText}>
                   No hay reservas para mostrar
                 </Text>
                 <AsianButton
                   title="Crear Reserva"
                   onPress={handleCreateReservation}
-                  type="primary"
-                  icon="add-circle-outline"
+                  variant="primary"
+                  icon={<Ionicons name="add-circle-outline" size={18} color="white" />}
                   style={styles.emptyButton}
                 />
               </View>
@@ -274,7 +283,7 @@ const ManageReservationsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
@@ -283,15 +292,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: asianTheme.spacing.md,
-    backgroundColor: asianTheme.colors.white,
+    padding: getSpacing('md'),
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: asianTheme.colors.grey.light,
+    borderBottomColor: getColor('grey.light'),
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
+    color: getColor('primary.red'),
   },
   loadingContainer: {
     flex: 1,
@@ -299,42 +308,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: asianTheme.spacing.md,
-    color: asianTheme.colors.grey.dark,
+    marginTop: getSpacing('md'),
+    color: getColor('grey.dark'),
     fontSize: 16,
   },
   reservationsList: {
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.xxl,
+    padding: getSpacing('md'),
+    paddingBottom: getSpacing('xxl'),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: asianTheme.spacing.xl,
+    padding: getSpacing('xl'),
   },
   emptyText: {
     fontSize: 18,
-    color: asianTheme.colors.grey.dark,
-    marginVertical: asianTheme.spacing.md,
+    color: getColor('grey.dark'),
+    marginVertical: getSpacing('md'),
     textAlign: 'center',
   },
   emptyButton: {
-    marginTop: asianTheme.spacing.md,
+    marginTop: getSpacing('md'),
   },
   reservationCard: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    marginBottom: asianTheme.spacing.md,
-    ...asianTheme.shadow.sm,
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    marginBottom: getSpacing('md'),
+    ...getShadow('small'),
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: asianTheme.spacing.md,
+    padding: getSpacing('md'),
     borderBottomWidth: 1,
-    borderBottomColor: asianTheme.colors.grey.light,
+    borderBottomColor: getColor('grey.light'),
   },
   dateContainer: {
     flexDirection: 'row',
@@ -343,35 +352,35 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: asianTheme.colors.text.dark,
+    color: getTextColor('dark'),
   },
   timeText: {
-    marginLeft: asianTheme.spacing.sm,
+    marginLeft: getSpacing('sm'),
     fontSize: 14,
-    color: asianTheme.colors.secondary.bamboo,
+    color: getColor('secondary.bamboo'),
   },
   statusBadge: {
-    paddingVertical: asianTheme.spacing.xs,
-    paddingHorizontal: asianTheme.spacing.sm,
-    borderRadius: asianTheme.borderRadius.sm,
+    paddingVertical: getSpacing('xs'),
+    paddingHorizontal: getSpacing('sm'),
+    borderRadius: getBorderRadius('sm'),
   },
   statusText: {
     fontSize: 12,
     fontWeight: 'bold',
   },
   cardBody: {
-    padding: asianTheme.spacing.md,
+    padding: getSpacing('md'),
   },
   clientInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.sm,
+    marginBottom: getSpacing('sm'),
   },
   clientName: {
-    marginLeft: asianTheme.spacing.xs,
+    marginLeft: getSpacing('xs'),
     fontSize: 16,
     fontWeight: '600',
-    color: asianTheme.colors.text.dark,
+    color: getTextColor('dark'),
   },
   reservationDetail: {
     flexDirection: 'row',
@@ -380,48 +389,48 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.xs,
+    marginRight: getSpacing('md'),
+    marginBottom: getSpacing('xs'),
   },
   detailText: {
-    marginLeft: asianTheme.spacing.xs,
+    marginLeft: getSpacing('xs'),
     fontSize: 14,
-    color: asianTheme.colors.grey.dark,
+    color: getColor('grey.dark'),
   },
   specialRequests: {
-    padding: asianTheme.spacing.md,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    padding: getSpacing('md'),
+    backgroundColor: getColor('secondary.pearl'),
     borderTopWidth: 1,
-    borderTopColor: asianTheme.colors.grey.light,
+    borderTopColor: getColor('grey.light'),
   },
   specialRequestsLabel: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: asianTheme.colors.secondary.bamboo,
-    marginBottom: asianTheme.spacing.xs,
+    color: getColor('secondary.bamboo'),
+    marginBottom: getSpacing('xs'),
   },
   specialRequestsText: {
     fontSize: 14,
-    color: asianTheme.colors.text.dark,
+    color: getTextColor('dark'),
     fontStyle: 'italic',
   },
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    padding: asianTheme.spacing.sm,
+    padding: getSpacing('sm'),
     borderTopWidth: 1,
-    borderTopColor: asianTheme.colors.grey.light,
+    borderTopColor: getColor('grey.light'),
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: asianTheme.spacing.sm,
-    marginLeft: asianTheme.spacing.sm,
+    padding: getSpacing('sm'),
+    marginLeft: getSpacing('sm'),
   },
   actionText: {
-    marginLeft: asianTheme.spacing.xs,
+    marginLeft: getSpacing('xs'),
     fontSize: 14,
-    color: asianTheme.colors.secondary.bamboo,
+    color: getColor('secondary.bamboo'),
   },
 });
 

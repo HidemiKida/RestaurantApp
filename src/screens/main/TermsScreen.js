@@ -1,6 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 
 const TermsScreen = () => {
@@ -56,38 +64,38 @@ const TermsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: asianTheme.spacing.lg,
+    padding: getSpacing('lg'),
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginBottom: asianTheme.spacing.md,
+    color: getColor('primary.red'),
+    marginBottom: getSpacing('md'),
   },
   date: {
     fontSize: 14,
-    color: asianTheme.colors.grey.medium,
+    color: getColor('grey.medium'),
     fontStyle: 'italic',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: asianTheme.colors.secondary.bamboo,
-    marginTop: asianTheme.spacing.lg,
-    marginBottom: asianTheme.spacing.sm,
+    color: getColor('secondary.bamboo'),
+    marginTop: getSpacing('lg'),
+    marginBottom: getSpacing('sm'),
   },
   paragraph: {
     fontSize: 16,
     lineHeight: 24,
-    color: asianTheme.colors.text.dark,
-    marginBottom: asianTheme.spacing.md,
+    color: getTextColor('dark'),
+    marginBottom: getSpacing('md'),
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,25 @@ import {
   Switch,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import { ASIAN_EMOJIS } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
 import { useAuth } from '../../context/auth/AuthContext';
 
 const SettingsScreen = ({ navigation }) => {
-  const { user, updateUserInfo } = useAuth();
+  const { user, updateUserInfo, logout } = useAuth();
   
   const [settings, setSettings] = useState({
     notifications: user?.notifications_enabled !== false,
@@ -68,11 +77,7 @@ const SettingsScreen = ({ navigation }) => {
         { text: 'Cancelar', style: 'cancel' },
         { 
           text: 'Cerrar Sesión', 
-          onPress: () => {
-            // Suponiendo que tienes una función logout en tu contexto de autenticación
-            const { logout } = useAuth();
-            logout();
-          }
+          onPress: () => logout()
         }
       ]
     );
@@ -94,6 +99,9 @@ const SettingsScreen = ({ navigation }) => {
     navigation.navigate('Privacy');
   };
 
+  // Define un color claro para primary
+  const primaryLightColor = getColor('primary.light');
+
   return (
     <View style={styles.container}>
       <ResponsiveContainer style={styles.content}>
@@ -105,7 +113,7 @@ const SettingsScreen = ({ navigation }) => {
             <Ionicons 
               name="settings-outline" 
               size={32} 
-              color={asianTheme.colors.primary.red} 
+              color={getColor('primary.red')}
             />
             <Text style={styles.headerTitle}>
               Configuración
@@ -121,49 +129,49 @@ const SettingsScreen = ({ navigation }) => {
             
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Ionicons name="notifications-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+                <Ionicons name="notifications-outline" size={24} color={getColor('secondary.bamboo')} />
                 <Text style={styles.settingLabel}>Notificaciones</Text>
               </View>
               <Switch
                 value={settings.notifications}
                 onValueChange={() => handleToggleSetting('notifications')}
                 trackColor={{ 
-                  false: asianTheme.colors.grey.light, 
-                  true: asianTheme.colors.primary.light 
+                  false: getColor('grey.light'), 
+                  true: primaryLightColor 
                 }}
-                thumbColor={settings.notifications ? asianTheme.colors.primary.red : asianTheme.colors.grey.medium}
+                thumbColor={settings.notifications ? getColor('primary.red') : getColor('grey.medium')}
               />
             </View>
             
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Ionicons name="moon-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+                <Ionicons name="moon-outline" size={24} color={getColor('secondary.bamboo')} />
                 <Text style={styles.settingLabel}>Modo Oscuro</Text>
               </View>
               <Switch
                 value={settings.darkMode}
                 onValueChange={() => handleToggleSetting('darkMode')}
                 trackColor={{ 
-                  false: asianTheme.colors.grey.light, 
-                  true: asianTheme.colors.primary.light 
+                  false: getColor('grey.light'), 
+                  true: primaryLightColor 
                 }}
-                thumbColor={settings.darkMode ? asianTheme.colors.primary.red : asianTheme.colors.grey.medium}
+                thumbColor={settings.darkMode ? getColor('primary.red') : getColor('grey.medium')}
               />
             </View>
             
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Ionicons name="mail-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+                <Ionicons name="mail-outline" size={24} color={getColor('secondary.bamboo')} />
                 <Text style={styles.settingLabel}>Actualizaciones por Email</Text>
               </View>
               <Switch
                 value={settings.emailUpdates}
                 onValueChange={() => handleToggleSetting('emailUpdates')}
                 trackColor={{ 
-                  false: asianTheme.colors.grey.light, 
-                  true: asianTheme.colors.primary.light 
+                  false: getColor('grey.light'), 
+                  true: primaryLightColor 
                 }}
-                thumbColor={settings.emailUpdates ? asianTheme.colors.primary.red : asianTheme.colors.grey.medium}
+                thumbColor={settings.emailUpdates ? getColor('primary.red') : getColor('grey.medium')}
               />
             </View>
           </View>
@@ -213,27 +221,27 @@ const SettingsScreen = ({ navigation }) => {
               style={styles.legalItem}
               onPress={handleTerms}
             >
-              <Ionicons name="document-text-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+              <Ionicons name="document-text-outline" size={24} color={getColor('secondary.bamboo')} />
               <Text style={styles.legalItemText}>Términos de Servicio</Text>
-              <Ionicons name="chevron-forward" size={20} color={asianTheme.colors.grey.medium} />
+              <Ionicons name="chevron-forward" size={20} color={getColor('grey.medium')} />
             </TouchableOpacity>
             
             <TouchableOpacity
               style={styles.legalItem}
               onPress={handlePrivacy}
             >
-              <Ionicons name="shield-checkmark-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+              <Ionicons name="shield-checkmark-outline" size={24} color={getColor('secondary.bamboo')} />
               <Text style={styles.legalItemText}>Política de Privacidad</Text>
-              <Ionicons name="chevron-forward" size={20} color={asianTheme.colors.grey.medium} />
+              <Ionicons name="chevron-forward" size={20} color={getColor('grey.medium')} />
             </TouchableOpacity>
             
             <TouchableOpacity
               style={styles.legalItem}
               onPress={handleAbout}
             >
-              <Ionicons name="information-circle-outline" size={24} color={asianTheme.colors.secondary.bamboo} />
+              <Ionicons name="information-circle-outline" size={24} color={getColor('secondary.bamboo')} />
               <Text style={styles.legalItemText}>Acerca de</Text>
-              <Ionicons name="chevron-forward" size={20} color={asianTheme.colors.grey.medium} />
+              <Ionicons name="chevron-forward" size={20} color={getColor('grey.medium')} />
             </TouchableOpacity>
           </View>
 
@@ -242,9 +250,10 @@ const SettingsScreen = ({ navigation }) => {
             <AsianButton
               title="Cerrar Sesión"
               onPress={handleLogout}
-              type="danger"
-              icon="log-out"
-              fullWidth
+              variant="outline"
+              style={{ borderColor: getColor('error') }}
+              textStyle={{ color: getColor('error') }}
+              icon={<Ionicons name="log-out-outline" size={20} color={getColor('error')} />}
             />
           </View>
         </ScrollView>
@@ -256,50 +265,50 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.xxl,
+    padding: getSpacing('md'),
+    paddingBottom: getSpacing('xxl'),
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginVertical: asianTheme.spacing.sm,
+    color: getColor('primary.red'),
+    marginVertical: getSpacing('sm'),
   },
   headerSubtitle: {
     fontSize: 16,
-    color: asianTheme.colors.secondary.bamboo,
+    color: getColor('secondary.bamboo'),
   },
-  section: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    marginBottom: asianTheme.spacing.lg,
-    padding: asianTheme.spacing.md,
-    ...asianTheme.shadow.sm,
+ section: {
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    marginBottom: getSpacing('lg'),
+    padding: getSpacing('md'),
+    ...getShadow('small'),
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginBottom: asianTheme.spacing.md,
+    color: getColor('primary.red'),
+    marginBottom: getSpacing('md'),
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: asianTheme.spacing.sm,
+    paddingVertical: getSpacing('sm'),
     borderBottomWidth: 1,
-    borderBottomColor: asianTheme.colors.grey.light,
-    marginBottom: asianTheme.spacing.sm,
+    borderBottomColor: getColor('grey.light'),
+    marginBottom: getSpacing('sm'),
   },
   settingInfo: {
     flexDirection: 'row',
@@ -307,46 +316,46 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
-    color: asianTheme.colors.text.dark,
-    marginLeft: asianTheme.spacing.md,
+    color: getTextColor('dark'),
+    marginLeft: getSpacing('md'),
   },
   languageOptions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: asianTheme.spacing.sm,
+    marginVertical: getSpacing('sm'),
   },
   languageOption: {
-    paddingVertical: asianTheme.spacing.sm,
-    paddingHorizontal: asianTheme.spacing.lg,
-    borderRadius: asianTheme.borderRadius.sm,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    paddingVertical: getSpacing('sm'),
+    paddingHorizontal: getSpacing('lg'),
+    borderRadius: getBorderRadius('sm'),
+    backgroundColor: getBackgroundColor('default'),
   },
   selectedLanguage: {
-    backgroundColor: asianTheme.colors.primary.light,
+    backgroundColor: getColor('primary.light'),
   },
   languageText: {
     fontSize: 16,
-    color: asianTheme.colors.text.dark,
+    color: getTextColor('dark'),
   },
   selectedLanguageText: {
-    color: asianTheme.colors.primary.red,
+    color: getColor('primary.red'),
     fontWeight: 'bold',
   },
   legalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: asianTheme.spacing.md,
+    paddingVertical: getSpacing('md'),
     borderBottomWidth: 1,
-    borderBottomColor: asianTheme.colors.grey.light,
+    borderBottomColor: getColor('grey.light'),
   },
   legalItemText: {
     flex: 1,
     fontSize: 16,
-    color: asianTheme.colors.text.dark,
-    marginLeft: asianTheme.spacing.md,
+    color: getTextColor('dark'),
+    marginLeft: getSpacing('md'),
   },
   logoutSection: {
-    marginVertical: asianTheme.spacing.lg,
+    marginVertical: getSpacing('lg'),
   },
 });
 

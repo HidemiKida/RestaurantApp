@@ -14,6 +14,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/auth/AuthContext';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import { ASIAN_EMOJIS, USER_ROLES } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
@@ -248,27 +256,27 @@ const AdminProfileScreen = ({ navigation }) => {
     <>
       <View style={styles.infoCard}>
         <View style={styles.infoRow}>
-          <Ionicons name="person" size={20} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="person" size={20} color={getColor('secondary.bamboo')} />
           <Text style={styles.infoLabel}>Nombre:</Text>
           <Text style={styles.infoValue}>{user?.name}</Text>
         </View>
         
         <View style={styles.infoRow}>
-          <Ionicons name="mail" size={20} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="mail" size={20} color={getColor('secondary.bamboo')} />
           <Text style={styles.infoLabel}>Email:</Text>
           <Text style={styles.infoValue}>{user?.email}</Text>
         </View>
         
         {user?.phone && (
           <View style={styles.infoRow}>
-            <Ionicons name="call" size={20} color={asianTheme.colors.secondary.bamboo} />
+            <Ionicons name="call" size={20} color={getColor('secondary.bamboo')} />
             <Text style={styles.infoLabel}>Teléfono:</Text>
             <Text style={styles.infoValue}>{user?.phone}</Text>
           </View>
         )}
         
         <View style={styles.infoRow}>
-          <Ionicons name="shield-checkmark" size={20} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="shield-checkmark" size={20} color={getColor('secondary.bamboo')} />
           <Text style={styles.infoLabel}>Rol:</Text>
           <Text style={styles.infoValue}>{getRoleText(user?.role)}</Text>
         </View>
@@ -277,7 +285,7 @@ const AdminProfileScreen = ({ navigation }) => {
           <Ionicons 
             name={user?.notifications_enabled ? "notifications" : "notifications-off"} 
             size={20} 
-            color={asianTheme.colors.secondary.bamboo} 
+            color={getColor('secondary.bamboo')}
           />
           <Text style={styles.infoLabel}>Notificaciones:</Text>
           <Text style={styles.infoValue}>
@@ -290,15 +298,15 @@ const AdminProfileScreen = ({ navigation }) => {
         <AsianButton
           title="Editar Perfil"
           onPress={toggleEdit}
-          type="primary"
-          icon="pencil"
+          variant="primary"
+          icon={<Ionicons name="pencil" size={20} color="white" />}
         />
         
         <AsianButton
           title="Cambiar Contraseña"
           onPress={() => setShowPasswordSection(true)}
-          type="secondary"
-          icon="lock-closed"
+          variant="secondary"
+          icon={<Ionicons name="lock-closed" size={20} color={getColor('primary.black')} />}
         />
       </View>
     </>
@@ -314,7 +322,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={formData.name}
             onChangeText={(text) => handleInputChange('name', text)}
             error={formErrors.name}
-            leftIcon="person"
+            leftIcon={<Ionicons name="person" size={20} color={getColor('secondary.bamboo')} />}
           />
         </View>
         
@@ -325,7 +333,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={formData.email}
             onChangeText={(text) => handleInputChange('email', text)}
             error={formErrors.email}
-            leftIcon="mail"
+            leftIcon={<Ionicons name="mail" size={20} color={getColor('secondary.bamboo')} />}
             keyboardType="email-address"
             autoCapitalize="none"
           />
@@ -338,7 +346,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={formData.phone}
             onChangeText={(text) => handleInputChange('phone', text)}
             error={formErrors.phone}
-            leftIcon="call"
+            leftIcon={<Ionicons name="call" size={20} color={getColor('secondary.bamboo')} />}
             keyboardType="phone-pad"
           />
         </View>
@@ -350,13 +358,13 @@ const AdminProfileScreen = ({ navigation }) => {
               value={formData.notifications_enabled}
               onValueChange={(value) => handleInputChange('notifications_enabled', value)}
               trackColor={{ 
-                false: asianTheme.colors.grey.light, 
-                true: asianTheme.colors.primary.light 
+                false: getColor('grey.light'), 
+                true: getColor('primary.light') 
               }}
               thumbColor={
                 formData.notifications_enabled 
-                  ? asianTheme.colors.primary.red 
-                  : asianTheme.colors.grey.medium
+                  ? getColor('primary.red') 
+                  : getColor('grey.medium')
               }
             />
           </View>
@@ -367,8 +375,8 @@ const AdminProfileScreen = ({ navigation }) => {
         <AsianButton
           title="Guardar Cambios"
           onPress={handleSaveProfile}
-          type="primary"
-          icon="save"
+          variant="primary"
+          icon={<Ionicons name="save" size={20} color="white" />}
           loading={saving}
           loadingText="Guardando..."
         />
@@ -376,8 +384,8 @@ const AdminProfileScreen = ({ navigation }) => {
         <AsianButton
           title="Cancelar"
           onPress={toggleEdit}
-          type="secondary"
-          icon="close"
+          variant="secondary"
+          icon={<Ionicons name="close" size={20} color={getColor('primary.black')} />}
         />
       </View>
     </>
@@ -393,7 +401,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={passwordForm.current_password}
             onChangeText={(text) => handlePasswordChange('current_password', text)}
             error={passwordErrors.current_password}
-            leftIcon="lock-closed"
+            leftIcon={<Ionicons name="lock-closed" size={20} color={getColor('secondary.bamboo')} />}
             secureTextEntry
           />
         </View>
@@ -405,7 +413,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={passwordForm.new_password}
             onChangeText={(text) => handlePasswordChange('new_password', text)}
             error={passwordErrors.new_password}
-            leftIcon="key"
+            leftIcon={<Ionicons name="key" size={20} color={getColor('secondary.bamboo')} />}
             secureTextEntry
           />
         </View>
@@ -417,7 +425,7 @@ const AdminProfileScreen = ({ navigation }) => {
             value={passwordForm.confirm_password}
             onChangeText={(text) => handlePasswordChange('confirm_password', text)}
             error={passwordErrors.confirm_password}
-            leftIcon="key"
+            leftIcon={<Ionicons name="key" size={20} color={getColor('secondary.bamboo')} />}
             secureTextEntry
           />
         </View>
@@ -427,8 +435,8 @@ const AdminProfileScreen = ({ navigation }) => {
         <AsianButton
           title="Cambiar Contraseña"
           onPress={handleChangePassword}
-          type="primary"
-          icon="key"
+          variant="primary"
+          icon={<Ionicons name="key" size={20} color="white" />}
           loading={saving}
           loadingText="Cambiando..."
         />
@@ -444,8 +452,8 @@ const AdminProfileScreen = ({ navigation }) => {
             });
             setPasswordErrors({});
           }}
-          type="secondary"
-          icon="close"
+          variant="secondary"
+          icon={<Ionicons name="close" size={20} color={getColor('primary.black')} />}
         />
       </View>
     </>
@@ -494,8 +502,10 @@ const AdminProfileScreen = ({ navigation }) => {
             <AsianButton
               title="Cerrar Sesión"
               onPress={handleLogout}
-              type="danger"
-              icon="log-out"
+              variant="outline" // Cambiado de "type" a "variant"
+              style={{ borderColor: getColor('error') }} // En lugar de "danger"
+              textStyle={{ color: getColor('error') }}
+              icon={<Ionicons name="log-out" size={20} color={getColor('error')} />}
               fullWidth
             />
           </View>
@@ -508,114 +518,114 @@ const AdminProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.xxl,
+    padding: getSpacing('md'),
+    paddingBottom: getSpacing('xxl'),
   },
   header: {
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   avatarContainer: {
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: asianTheme.colors.primary.red,
+    backgroundColor: getColor('primary.red'),
     justifyContent: 'center',
     alignItems: 'center',
-    ...asianTheme.shadow.md,
+    ...getShadow('medium'), // Cambiado de asianTheme.shadow.md
   },
   avatarText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: asianTheme.colors.white,
+    color: 'white',
   },
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.text.dark,
-    marginBottom: asianTheme.spacing.xs,
+    color: getTextColor('dark'),
+    marginBottom: getSpacing('xs'),
   },
   userEmail: {
     fontSize: 16,
-    color: asianTheme.colors.grey.dark,
-    marginBottom: asianTheme.spacing.sm,
+    color: getColor('grey.dark'),
+    marginBottom: getSpacing('sm'),
   },
   roleBadge: {
-    backgroundColor: asianTheme.colors.primary.light,
-    paddingVertical: asianTheme.spacing.xs,
-    paddingHorizontal: asianTheme.spacing.md,
-    borderRadius: asianTheme.borderRadius.sm,
+    backgroundColor: getColor('primary.light'),
+    paddingVertical: getSpacing('xs'),
+    paddingHorizontal: getSpacing('md'),
+    borderRadius: getBorderRadius('sm'),
   },
   roleText: {
-    color: asianTheme.colors.primary.dark,
+    color: getColor('primary.red'),
     fontWeight: 'bold',
   },
   infoCard: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    padding: asianTheme.spacing.lg,
-    ...asianTheme.shadow.md,
-    marginBottom: asianTheme.spacing.lg,
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
+    ...getShadow('medium'), // Cambiado de asianTheme.shadow.md
+    marginBottom: getSpacing('lg'),
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   infoLabel: {
     width: 80,
     fontSize: 16,
     fontWeight: 'bold',
-    color: asianTheme.colors.secondary.bamboo,
-    marginLeft: asianTheme.spacing.sm,
+    color: getColor('secondary.bamboo'),
+    marginLeft: getSpacing('sm'),
   },
   infoValue: {
     flex: 1,
     fontSize: 16,
-    color: asianTheme.colors.text.dark,
+    color: getTextColor('dark'),
   },
   formCard: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    padding: asianTheme.spacing.lg,
-    ...asianTheme.shadow.md,
-    marginBottom: asianTheme.spacing.lg,
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
+    ...getShadow('medium'), // Cambiado de asianTheme.shadow.md
+    marginBottom: getSpacing('lg'),
   },
   formGroup: {
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: asianTheme.colors.secondary.bamboo,
-    marginBottom: asianTheme.spacing.xs,
+    color: getColor('secondary.bamboo'),
+    marginBottom: getSpacing('xs'),
   },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: asianTheme.spacing.sm,
+    paddingVertical: getSpacing('sm'),
   },
   switchLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: asianTheme.colors.secondary.bamboo,
+    color: getColor('secondary.bamboo'),
   },
   actionsContainer: {
-    gap: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.xl,
+    gap: getSpacing('md'),
+    marginBottom: getSpacing('xl'),
   },
   logoutContainer: {
-    marginTop: asianTheme.spacing.lg,
+    marginTop: getSpacing('lg'),
   },
 });
 

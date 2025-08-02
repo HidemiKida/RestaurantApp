@@ -14,6 +14,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import { ASIAN_EMOJIS } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
@@ -265,7 +273,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={asianTheme.colors.primary.red} />
+        <ActivityIndicator size="large" color={getColor('primary.red')} />
         <Text style={styles.loadingText}>
           Cargando configuración...
         </Text>
@@ -288,7 +296,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
             <Ionicons 
               name="settings-outline" 
               size={32} 
-              color={asianTheme.colors.primary.red} 
+              color={getColor('primary.red')}
             />
             <Text style={styles.headerTitle}>
               Configuración del Restaurante
@@ -316,7 +324,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                   <Ionicons
                     name="restaurant-outline"
                     size={48}
-                    color={asianTheme.colors.grey.medium}
+                    color={getColor('grey.medium')}
                   />
                   <Text style={styles.placeholderText}>
                     Sin imagen
@@ -328,7 +336,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 <Ionicons
                   name="camera"
                   size={18}
-                  color={asianTheme.colors.white}
+                  color="white"
                 />
               </View>
             </TouchableOpacity>
@@ -341,7 +349,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
           <View style={styles.formSection}>
             {/* Información Básica */}
             <View style={styles.sectionTitle}>
-              <Ionicons name="information-circle" size={20} color={asianTheme.colors.primary.red} />
+              <Ionicons name="information-circle" size={20} color={getColor('primary.red')} />
               <Text style={styles.sectionTitleText}>Información Básica</Text>
             </View>
             
@@ -353,7 +361,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.name}
                 onChangeText={(text) => handleInputChange('name', text)}
                 error={formErrors.name}
-                leftIcon="restaurant"
+                leftIcon={<Ionicons name="restaurant" size={20} color={getColor('secondary.bamboo')} />}
               />
             </View>
 
@@ -365,7 +373,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.cuisine_type}
                 onChangeText={(text) => handleInputChange('cuisine_type', text)}
                 error={formErrors.cuisine_type}
-                leftIcon="restaurant"
+                leftIcon={<Ionicons name="restaurant" size={20} color={getColor('secondary.bamboo')} />}
               />
               <View style={styles.cuisinePreview}>
                 <Text style={styles.cuisineEmoji}>
@@ -385,7 +393,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.description}
                 onChangeText={(text) => handleInputChange('description', text)}
                 error={formErrors.description}
-                leftIcon="document-text"
+                leftIcon={<Ionicons name="document-text" size={20} color={getColor('secondary.bamboo')} />}
                 multiline
                 numberOfLines={3}
               />
@@ -393,7 +401,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
 
             {/* Contacto y Ubicación */}
             <View style={styles.sectionTitle}>
-              <Ionicons name="location" size={20} color={asianTheme.colors.primary.red} />
+              <Ionicons name="location" size={20} color={getColor('primary.red')} />
               <Text style={styles.sectionTitleText}>Contacto y Ubicación</Text>
             </View>
             
@@ -405,7 +413,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.address}
                 onChangeText={(text) => handleInputChange('address', text)}
                 error={formErrors.address}
-                leftIcon="location"
+                leftIcon={<Ionicons name="location" size={20} color={getColor('secondary.bamboo')} />}
               />
             </View>
 
@@ -417,7 +425,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.phone}
                 onChangeText={(text) => handleInputChange('phone', text)}
                 error={formErrors.phone}
-                leftIcon="call"
+                leftIcon={<Ionicons name="call" size={20} color={getColor('secondary.bamboo')} />}
                 keyboardType="phone-pad"
               />
             </View>
@@ -430,7 +438,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.email}
                 onChangeText={(text) => handleInputChange('email', text)}
                 error={formErrors.email}
-                leftIcon="mail"
+                leftIcon={<Ionicons name="mail" size={20} color={getColor('secondary.bamboo')} />}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -444,7 +452,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.website}
                 onChangeText={(text) => handleInputChange('website', text)}
                 error={formErrors.website}
-                leftIcon="globe"
+                leftIcon={<Ionicons name="globe" size={20} color={getColor('secondary.bamboo')} />}
                 keyboardType="url"
                 autoCapitalize="none"
               />
@@ -452,7 +460,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
 
             {/* Horarios */}
             <View style={styles.sectionTitle}>
-              <Ionicons name="time" size={20} color={asianTheme.colors.primary.red} />
+              <Ionicons name="time" size={20} color={getColor('primary.red')} />
               <Text style={styles.sectionTitleText}>Horario de Atención</Text>
             </View>
             
@@ -464,7 +472,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.opening_hours}
                 onChangeText={(text) => handleInputChange('opening_hours', text)}
                 error={formErrors.opening_hours}
-                leftIcon="time"
+                leftIcon={<Ionicons name="time" size={20} color={getColor('secondary.bamboo')} />}
               />
             </View>
 
@@ -476,7 +484,7 @@ const RestaurantSettingsScreen = ({ navigation }) => {
                 value={formData.closing_hours}
                 onChangeText={(text) => handleInputChange('closing_hours', text)}
                 error={formErrors.closing_hours}
-                leftIcon="time"
+                leftIcon={<Ionicons name="time" size={20} color={getColor('secondary.bamboo')} />}
               />
             </View>
           </View>
@@ -487,14 +495,15 @@ const RestaurantSettingsScreen = ({ navigation }) => {
               onPress={handleSaveChanges}
               loading={saving}
               loadingText="Guardando..."
-              icon="save-outline"
+              variant="primary"
+              icon={<Ionicons name="save-outline" size={20} color="white" />}
             />
 
             <AsianButton
               title="Cancelar"
               onPress={() => navigation.goBack()}
-              type="secondary"
-              icon="close-circle-outline"
+              variant="secondary"
+              icon={<Ionicons name="close-circle-outline" size={20} color={getColor('primary.black')} />}
             />
           </View>
         </ScrollView>
@@ -506,54 +515,54 @@ const RestaurantSettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: asianTheme.spacing.md,
-    paddingBottom: asianTheme.spacing.xxl,
+    padding: getSpacing('md'),
+    paddingBottom: getSpacing('xxl'),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   loadingText: {
-    marginTop: asianTheme.spacing.md,
+    marginTop: getSpacing('md'),
     fontSize: 16,
-    color: asianTheme.colors.secondary.bamboo,
+    color: getColor('secondary.bamboo'),
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginTop: asianTheme.spacing.sm,
+    color: getColor('primary.red'),
+    marginTop: getSpacing('sm'),
     textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 16,
-    color: asianTheme.colors.secondary.bamboo,
-    marginTop: asianTheme.spacing.xs,
+    color: getColor('secondary.bamboo'),
+    marginTop: getSpacing('xs'),
     textAlign: 'center',
   },
   imageSection: {
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   imageContainer: {
     width: 150,
     height: 150,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: asianTheme.colors.white,
-    ...asianTheme.shadow.md,
+    backgroundColor: 'white',
+    ...getShadow('medium'),
   },
   restaurantImage: {
     width: '100%',
@@ -565,70 +574,70 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: asianTheme.colors.grey.light,
+    backgroundColor: getColor('grey.light'),
   },
   placeholderText: {
-    marginTop: asianTheme.spacing.xs,
-    color: asianTheme.colors.grey.medium,
+    marginTop: getSpacing('xs'),
+    color: getColor('grey.medium'),
     fontSize: 14,
   },
   editImageButton: {
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: asianTheme.colors.primary.red,
+    backgroundColor: getColor('primary.red'),
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    ...asianTheme.shadow.sm,
+    ...getShadow('small'),
   },
   imageHelperText: {
-    marginTop: asianTheme.spacing.sm,
+    marginTop: getSpacing('sm'),
     fontSize: 14,
-    color: asianTheme.colors.grey.medium,
+    color: getColor('grey.medium'),
   },
   formSection: {
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   sectionTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.md,
-    marginTop: asianTheme.spacing.lg,
+    marginBottom: getSpacing('md'),
+    marginTop: getSpacing('lg'),
   },
   sectionTitleText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
-    marginLeft: asianTheme.spacing.sm,
+    color: getColor('primary.red'),
+    marginLeft: getSpacing('sm'),
   },
   formGroup: {
-    marginBottom: asianTheme.spacing.md,
+    marginBottom: getSpacing('md'),
   },
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: asianTheme.colors.secondary.bamboo,
-    marginBottom: asianTheme.spacing.xs,
+    color: getColor('secondary.bamboo'),
+    marginBottom: getSpacing('xs'),
   },
   cuisinePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: asianTheme.spacing.xs,
+    marginTop: getSpacing('xs'),
   },
   cuisineEmoji: {
     fontSize: 18,
-    marginRight: asianTheme.spacing.sm,
+    marginRight: getSpacing('sm'),
   },
   cuisineText: {
     fontSize: 14,
-    color: asianTheme.colors.grey.medium,
+    color: getColor('grey.medium'),
   },
   actionButtons: {
-    gap: asianTheme.spacing.md,
-    marginTop: asianTheme.spacing.md,
+    gap: getSpacing('md'),
+    marginTop: getSpacing('md'),
   },
 });
 

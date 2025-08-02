@@ -8,10 +8,19 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { asianTheme } from '../../styles/asianTheme';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 import { ASIAN_EMOJIS } from '../../utils/constants';
 import ResponsiveContainer from '../../components/common/ResponsiveContainer';
 import AsianButton from '../../components/common/AsianButton';
@@ -116,7 +125,7 @@ const TableManagementScreen = ({ navigation }) => {
       activeOpacity={0.7}
     >
       <View style={styles.tableHeader}>
-        <View style={[styles.tableStatus, { backgroundColor: item.active ? asianTheme.colors.success : asianTheme.colors.error }]}>
+        <View style={[styles.tableStatus, { backgroundColor: item.active ? getColor('success') : getColor('error') }]}>
           <Text style={styles.tableStatusText}>
             {item.active ? 'Activa' : 'Inactiva'}
           </Text>
@@ -127,14 +136,14 @@ const TableManagementScreen = ({ navigation }) => {
       
       <View style={styles.tableDetails}>
         <View style={styles.tableDetail}>
-          <Ionicons name="people" size={18} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="people" size={18} color={getColor('secondary.bamboo')} />
           <Text style={styles.tableDetailText}>
             Capacidad: {item.capacity} {item.capacity === 1 ? 'persona' : 'personas'}
           </Text>
         </View>
         
         <View style={styles.tableDetail}>
-          <Ionicons name="location" size={18} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="location" size={18} color={getColor('secondary.bamboo')} />
           <Text style={styles.tableDetailText}>
             {item.location || 'Ubicación no especificada'}
           </Text>
@@ -146,7 +155,7 @@ const TableManagementScreen = ({ navigation }) => {
           style={[styles.tableAction, styles.editAction]}
           onPress={() => handleEditTable(item)}
         >
-          <Ionicons name="pencil" size={16} color={asianTheme.colors.secondary.bamboo} />
+          <Ionicons name="pencil" size={16} color={getColor('secondary.bamboo')} />
           <Text style={styles.tableActionText}>Editar</Text>
         </TouchableOpacity>
         
@@ -154,8 +163,8 @@ const TableManagementScreen = ({ navigation }) => {
           style={[styles.tableAction, styles.deleteAction]}
           onPress={() => handleDeleteTable(item.id)}
         >
-          <Ionicons name="trash-bin" size={16} color={asianTheme.colors.error} />
-          <Text style={[styles.tableActionText, { color: asianTheme.colors.error }]}>
+          <Ionicons name="trash-bin" size={16} color={getColor('error')} />
+          <Text style={[styles.tableActionText, { color: getColor('error') }]}>
             Eliminar
           </Text>
         </TouchableOpacity>
@@ -174,29 +183,29 @@ const TableManagementScreen = ({ navigation }) => {
           
           <AsianButton
             title="Nueva Mesa"
-            icon="add-circle-outline"
             onPress={handleCreateTable}
-            type="primary"
+            variant="primary"
             size="small"
+            icon={<Ionicons name="add-circle-outline" size={18} color="white" />}
           />
         </View>
         
         {/* Lista de mesas */}
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={asianTheme.colors.primary.red} />
+            <ActivityIndicator size="large" color={getColor('primary.red')} />
             <Text style={styles.loadingText}>Cargando mesas...</Text>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle" size={48} color={asianTheme.colors.error} />
+            <Ionicons name="alert-circle" size={48} color={getColor('error')} />
             <Text style={styles.errorText}>{error}</Text>
             <AsianButton
               title="Reintentar"
               onPress={loadTables}
-              type="secondary"
+              variant="secondary"
               size="small"
-              icon="refresh"
+              icon={<Ionicons name="refresh" size={18} color={getColor('primary.black')} />}
             />
           </View>
         ) : (
@@ -210,13 +219,13 @@ const TableManagementScreen = ({ navigation }) => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={[asianTheme.colors.primary.red]}
-                tintColor={asianTheme.colors.primary.red}
+                colors={[getColor('primary.red')]}
+                tintColor={getColor('primary.red')}
               />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="restaurant" size={64} color={asianTheme.colors.grey.light} />
+                <Ionicons name="restaurant" size={64} color={getColor('grey.light')} />
                 <Text style={styles.emptyText}>
                   No hay mesas configuradas
                 </Text>
@@ -235,22 +244,22 @@ const TableManagementScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getBackgroundColor('default'),
   },
   content: {
     flex: 1,
-    padding: asianTheme.spacing.md,
+    padding: getSpacing('md'),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.lg,
+    marginBottom: getSpacing('lg'),
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
+    color: getColor('primary.red'),
   },
   loadingContainer: {
     flex: 1,
@@ -258,106 +267,106 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: asianTheme.spacing.md,
-    color: asianTheme.colors.grey.dark,
+    marginTop: getSpacing('md'),
+    color: getColor('grey.dark'),
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: asianTheme.spacing.lg,
+    padding: getSpacing('lg'),
   },
   errorText: {
-    marginVertical: asianTheme.spacing.md,
-    color: asianTheme.colors.error,
+    marginVertical: getSpacing('md'),
+    color: getColor('error'),
     fontSize: 16,
     textAlign: 'center',
   },
   tablesList: {
-    paddingBottom: asianTheme.spacing.xl,
+    paddingBottom: getSpacing('xl'),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: asianTheme.spacing.xl,
+    padding: getSpacing('xl'),
   },
   emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: asianTheme.colors.grey.dark,
-    marginTop: asianTheme.spacing.md,
+    color: getColor('grey.dark'),
+    marginTop: getSpacing('md'),
   },
   emptySubText: {
     fontSize: 14,
-    color: asianTheme.colors.grey.medium,
-    marginTop: asianTheme.spacing.sm,
+    color: getColor('grey.medium'),
+    marginTop: getSpacing('sm'),
     textAlign: 'center',
   },
   tableCard: {
-    backgroundColor: asianTheme.colors.white,
-    borderRadius: asianTheme.borderRadius.md,
-    padding: asianTheme.spacing.md,
-    marginBottom: asianTheme.spacing.md,
-    ...asianTheme.shadow.md,
+    backgroundColor: 'white',
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('md'),
+    marginBottom: getSpacing('md'),
+    ...getShadow('medium'),
   },
   tableHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.sm,
+    marginBottom: getSpacing('sm'),
   },
   tableNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: asianTheme.colors.primary.red,
+    color: getColor('primary.red'),
   },
   tableStatus: {
-    paddingVertical: asianTheme.spacing.xs,
-    paddingHorizontal: asianTheme.spacing.sm,
-    borderRadius: asianTheme.borderRadius.sm,
+    paddingVertical: getSpacing('xs'),
+    paddingHorizontal: getSpacing('sm'),
+    borderRadius: getBorderRadius('sm'),
   },
   tableStatusText: {
-    color: asianTheme.colors.white,
+    color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
   },
   tableDetails: {
-    marginVertical: asianTheme.spacing.sm,
+    marginVertical: getSpacing('sm'),
   },
   tableDetail: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: asianTheme.spacing.xs,
+    marginBottom: getSpacing('xs'),
   },
   tableDetailText: {
     fontSize: 14,
-    color: asianTheme.colors.grey.dark,
-    marginLeft: asianTheme.spacing.xs,
+    color: getColor('grey.dark'),
+    marginLeft: getSpacing('xs'),
   },
   tableActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: asianTheme.spacing.sm,
+    marginTop: getSpacing('sm'),
     borderTopWidth: 1,
-    borderTopColor: asianTheme.colors.grey.light,
-    paddingTop: asianTheme.spacing.sm,
+    borderTopColor: getColor('grey.light'),
+    paddingTop: getSpacing('sm'),
   },
   tableAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: asianTheme.spacing.sm,
-    borderRadius: asianTheme.borderRadius.sm,
-    marginLeft: asianTheme.spacing.sm,
+    padding: getSpacing('sm'),
+    borderRadius: getBorderRadius('sm'),
+    marginLeft: getSpacing('sm'),
   },
   tableActionText: {
     fontSize: 14,
-    marginLeft: asianTheme.spacing.xs,
-    color: asianTheme.colors.secondary.bamboo,
+    marginLeft: getSpacing('xs'),
+    color: getColor('secondary.bamboo'),
   },
   editAction: {
-    backgroundColor: asianTheme.colors.secondary.pearl,
+    backgroundColor: getColor('secondary.pearl'),
   },
   deleteAction: {
     backgroundColor: '#FEE8E8',

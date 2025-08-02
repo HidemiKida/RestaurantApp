@@ -1,531 +1,612 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
   ActivityIndicator,
-  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
-import axios from 'axios';
-import { API_URL } from '../config/constants';
-import { useAuth } from '../contexts/AuthContext';
-import ReservationStatusBadge from '../components/ReservationStatusBadge';
+import { asianTheme } from '../../styles/asianTheme';
+import { ASIAN_EMOJIS } from '../../utils/constants';
+import ResponsiveContainer from '../../components/common/ResponsiveContainer';
+import AsianButton from '../../components/common/AsianButton';
+import reservationService from '../../services/api/reservationService';
+import { formatError } from '../../utils/helpers';
+import { 
+  getColor, 
+  getSpacing, 
+  getBorderRadius, 
+  getShadow, 
+  getTextColor, 
+  getBackgroundColor 
+} from '../../styles/themeUtils';
 
 const ReservationDetailScreen = ({ route, navigation }) => {
-  const { reservationId } = route.params;
-  const { authState } = useAuth();
-  
-  const [reservation, setReservation] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { reservation: initialReservation, onReservationUpdate, fromBooking } = route.params;
+  const [reservation, setReservation] = useState(initialReservation);
+  const [isLoading, setIsLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
+  // Cargar detalles actualizados de la reserva
   useEffect(() => {
-    fetchReservationDetails();
-  }, [reservationId]);
-
-  const fetchReservationDetails = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_URL}/api/reservations/${reservationId}`, {
-        headers: {
-          Authorization: `Bearer ${authState.userToken}`,
-        },
-      });
-      setReservation(response.data);
-      setError(null);
-    } catch (err) {
-      console.error('Error al obtener detalles de la reserva:', err);
-      setError('No se pudo cargar la información de la reserva.');
-    } finally {
-      setLoading(false);
+    if (reservation.id && !fromBooking) {
+      loadReservationDetails();
     }
-  };
+  }, []);
 
-  const handleStatusChange = async (newStatus) => {
+  const loadReservationDetails = async () => {
     try {
-      await axios.patch(
-        `${API_URL}/api/reservations/${reservationId}/status`, 
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${authState.userToken}`,
-          },
+      setDetailLoading(true);
+      const response = await reservationService.getReservationDetail(reservation.id);
+      
+      if (response.success && response.data) {
+        const updatedReservation = response.data.data || response.data;
+        setReservation(updatedReservation);
+        
+        // Notificar a la pantalla padre si hay callback
+        if (onReservationUpdate) {
+          onReservationUpdate(updatedReservation);
         }
-      );
-      
-      // Actualizamos el estado localmente
-      setReservation({
-        ...reservation,
-        status: newStatus
-      });
-      
-      Alert.alert('Éxito', 'El estado de la reserva ha sido actualizado.');
-      
+        
+        console.log('✅ Detalles de reservación actualizados');
+      }
     } catch (error) {
-      console.error('Error al actualizar el estado:', error);
-      Alert.alert('Error', 'No se pudo actualizar el estado de la reserva.');
+      console.error('❌ Error cargando detalles:', error);
+      // No mostrar error si solo es para refrescar datos
+    } finally {
+      setDetailLoading(false);
     }
   };
 
-  const handleDeleteReservation = () => {
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmada':
+      case 'confirmed':
+        return getColor('success');
+      case 'pendiente':
+      case 'pending':
+        return getColor('warning');
+      case 'cancelada':
+      case 'cancelled':
+        return getColor('error');
+      case 'completada':
+      case 'completed':
+        return getColor('secondary.bamboo');
+      default:
+        return getColor('grey.medium');
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmada':
+      case 'confirmed':
+        return 'Confirmada ✅';
+      case 'pendiente':
+      case 'pending':
+        return 'Pendiente ⏳';
+      case 'cancelada':
+      case 'cancelled':
+        return 'Cancelada ❌';
+      case 'completada':
+      case 'completed':
+        return 'Completada 🎉';
+      default:
+        return status || 'Desconocido';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getCuisineEmoji = (cuisineType) => {
+    switch (cuisineType?.toLowerCase()) {
+      case 'japonesa':
+        return '🍣';
+      case 'china':
+        return '🥟';
+      case 'tailandesa':
+        return '🍜';
+      case 'coreana':
+        return '🍲';
+      case 'vietnamita':
+        return '🍲';
+      case 'india':
+        return '🍛';
+      default:
+        return ASIAN_EMOJIS.FOOD;
+    }
+  };
+
+  const isUpcoming = () => {
+    const reservationDate = new Date(reservation.reservation_date);
+    const now = new Date();
+    return reservationDate > now;
+  };
+
+  const canCancel = () => {
+    // No se puede cancelar si ya está cancelada o completada
+    const status = reservation.status?.toLowerCase();
+    if (status === 'cancelada' || status === 'cancelled' || 
+        status === 'completada' || status === 'completed') {
+      return false;
+    }
+    
+    // Verificar si quedan más de 2 horas
+    const reservationDate = new Date(reservation.reservation_date);
+    const now = new Date();
+    const hoursUntilReservation = (reservationDate - now) / (1000 * 60 * 60);
+    
+    return hoursUntilReservation > 2; // Permite cancelar hasta 2 horas antes
+  };
+
+  const handleCancel = () => {
     Alert.alert(
-      'Eliminar Reserva',
-      '¿Estás seguro de que deseas eliminar esta reserva? Esta acción no se puede deshacer.',
+      'Cancelar Reserva',
+      '¿Estás seguro que deseas cancelar esta reserva? Esta acción no se puede deshacer.',
       [
+        { text: 'No, mantener reserva', style: 'cancel' },
         {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Eliminar',
+          text: 'Sí, cancelar',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(`${API_URL}/api/reservations/${reservationId}`, {
-                headers: {
-                  Authorization: `Bearer ${authState.userToken}`,
-                },
-              });
-              
-              Alert.alert('Éxito', 'La reserva ha sido eliminada.');
-              navigation.goBack();
-              
-            } catch (error) {
-              console.error('Error al eliminar la reserva:', error);
-              Alert.alert('Error', 'No se pudo eliminar la reserva.');
-            }
-          },
+          onPress: confirmCancel,
         },
       ]
     );
   };
 
-  if (loading) {
+  const confirmCancel = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Usar tu servicio existente para cancelar
+      const response = await reservationService.cancelReservation(reservation.id);
+
+      if (response.success) {
+        // Actualizar el estado local
+        const cancelledReservation = {
+          ...reservation,
+          status: 'cancelada'
+        };
+        setReservation(cancelledReservation);
+
+        // Notificar a la pantalla padre
+        if (onReservationUpdate) {
+          onReservationUpdate(cancelledReservation);
+        }
+
+        Alert.alert(
+          'Reserva Cancelada',
+          response.message || 'Tu reserva ha sido cancelada exitosamente.',
+          [
+            {
+              text: 'Entendido',
+              onPress: () => {
+                // Si vino del booking, regresar a la lista de reservas
+                if (fromBooking) {
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      { name: 'Main' },
+                      { name: 'Reservations' }
+                    ],
+                  });
+                } else {
+                  navigation.goBack();
+                }
+              },
+            },
+          ]
+        );
+        
+        console.log('✅ Reservación cancelada exitosamente');
+      } else {
+        throw new Error(response.message || 'Error al cancelar la reserva');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error cancelando reserva:', error);
+      const errorMessage = formatError(error);
+      
+      Alert.alert(
+        'Error al Cancelar', 
+        errorMessage,
+        [
+          { text: 'Reintentar', onPress: confirmCancel },
+          { text: 'Cerrar', style: 'cancel' }
+        ]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleContact = () => {
+    Alert.alert(
+      'Contactar Restaurante',
+      `¿Cómo te gustaría contactar a ${reservation.restaurant?.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Llamar', onPress: () => Alert.alert('Función próximamente') },
+        { text: 'WhatsApp', onPress: () => Alert.alert('Función próximamente') },
+      ]
+    );
+  };
+
+  const getTimeUntilReservation = () => {
+    const reservationDate = new Date(reservation.reservation_date);
+    const now = new Date();
+    const diffMs = reservationDate - now;
+    
+    if (diffMs <= 0) return null;
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) {
+      return `En ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+    } else if (diffHours > 0) {
+      return `En ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+    } else {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `En ${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`;
+    }
+  };
+
+  if (detailLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6347" />
-        <Text style={styles.loadingText}>Cargando detalles de la reserva...</Text>
-      </View>
-    );
-  }
-
-  if (error || !reservation) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color="#F44336" />
-        <Text style={styles.errorText}>{error || 'No se encontró la reserva'}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton}
-          onPress={fetchReservationDetails}
-        >
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </TouchableOpacity>
+        <ActivityIndicator size="large" color={getColor('primary.red')} />
+        <Text style={styles.loadingText}>Cargando detalles...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Reserva #{reservationId}</Text>
-          <ReservationStatusBadge status={reservation.status} />
-        </View>
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Información del Cliente</Text>
-        
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Nombre:</Text>
-            <Text style={styles.infoValue}>{reservation.client_name}</Text>
+    <ResponsiveContainer>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Estado de la reserva */}
+        <View style={styles.statusCard}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(reservation.status) }]}>
+            <Text style={styles.statusText}>{getStatusText(reservation.status)}</Text>
           </View>
           
-          <View style={styles.infoRow}>
-            <Ionicons name="call-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Teléfono:</Text>
-            <Text style={styles.infoValue}>{reservation.phone}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="mail-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{reservation.email || 'No especificado'}</Text>
-          </View>
+          {isUpcoming() && (reservation.status?.toLowerCase() === 'confirmada' || reservation.status?.toLowerCase() === 'confirmed') && (
+            <View style={styles.upcomingBadge}>
+              <Ionicons name="time-outline" size={16} color="white" />
+              <Text style={styles.upcomingText}>{getTimeUntilReservation()}</Text>
+            </View>
+          )}
         </View>
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Detalles de la Reserva</Text>
-        
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Fecha:</Text>
-            <Text style={styles.infoValue}>
-              {format(new Date(reservation.reservation_date), 'dd/MM/yyyy')}
+
+        {/* Información del restaurante */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>
+            {getCuisineEmoji(reservation.restaurant?.cuisine_type)} {reservation.restaurant?.name}
+          </Text>
+          
+          {reservation.restaurant?.address && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="location" size={20} color={getColor('primary.red')} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Dirección</Text>
+                <Text style={styles.detailValue}>{reservation.restaurant.address}</Text>
+              </View>
+            </View>
+          )}
+
+          {reservation.restaurant?.phone && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="call" size={20} color={getColor('primary.red')} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Teléfono</Text>
+                <Text style={styles.detailValue}>{reservation.restaurant.phone}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Detalles de la reserva */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>
+            {ASIAN_EMOJIS.CALENDAR} Detalles de la reserva
+          </Text>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="calendar" size={20} color={getColor('primary.red')} />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Fecha</Text>
+              <Text style={styles.detailValue}>{formatDate(reservation.reservation_date)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="time" size={20} color={getColor('primary.red')} />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Hora</Text>
+              <Text style={styles.detailValue}>{formatTime(reservation.reservation_date)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="restaurant" size={20} color={getColor('primary.red')} />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Mesa</Text>
+              <Text style={styles.detailValue}>
+                {reservation.table?.table_number || `Mesa ${reservation.table?.id}`}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="people" size={20} color={getColor('primary.red')} />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Personas</Text>
+              <Text style={styles.detailValue}>
+                {reservation.party_size} {reservation.party_size === 1 ? 'persona' : 'personas'}
+              </Text>
+            </View>
+          </View>
+
+          {reservation.special_requests && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="chatbubble" size={20} color={getColor('primary.red')} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Solicitudes especiales</Text>
+                <Text style={styles.detailValue}>{reservation.special_requests}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Información adicional */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>
+            {ASIAN_EMOJIS.TEMPLE} Información importante
+          </Text>
+
+          <View style={styles.infoItem}>
+            <Ionicons name="location" size={16} color={getColor('secondary.bamboo')} />
+            <Text style={styles.infoText}>
+              No olvides llegar puntual a tu reserva
             </Text>
           </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Hora:</Text>
-            <Text style={styles.infoValue}>
-              {format(new Date(`2000-01-01T${reservation.reservation_time}`), 'HH:mm')}
+
+          <View style={styles.infoItem}>
+            <Ionicons name="card" size={16} color={getColor('secondary.bamboo')} />
+            <Text style={styles.infoText}>
+              El pago se realiza directamente en el restaurante
             </Text>
           </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="people-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Personas:</Text>
-            <Text style={styles.infoValue}>{reservation.guests}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="restaurant-outline" size={20} color="#666" />
-            <Text style={styles.infoLabel}>Mesa:</Text>
-            <Text style={styles.infoValue}>
-              {reservation.table_id ? `#${reservation.table_id}` : 'Sin asignar'}
-            </Text>
-          </View>
+
+          {canCancel() && (
+            <View style={styles.infoItem}>
+              <Ionicons name="time" size={16} color={getColor('warning')} />
+              <Text style={styles.infoText}>
+                Puedes cancelar hasta 2 horas antes de tu reserva
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
-      
-      {reservation.notes && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notas</Text>
-          <View style={styles.notesContainer}>
-            <Text style={styles.notesText}>{reservation.notes}</Text>
-          </View>
-        </View>
-      )}
-      
-      <View style={styles.actionsSection}>
-        <Text style={styles.sectionTitle}>Acciones</Text>
-        
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => navigation.navigate('EditReservation', { reservationId })}
-          >
-            <Ionicons name="create-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Editar</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDeleteReservation}
-          >
-            <Ionicons name="trash-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Eliminar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      <View style={styles.statusSection}>
-        <Text style={styles.sectionTitle}>Cambiar Estado</Text>
-        
-        <View style={styles.statusButtonsContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.statusButton,
-              styles.pendingButton,
-              reservation.status === 0 && styles.activeStatusButton
-            ]}
-            disabled={reservation.status === 0}
-            onPress={() => handleStatusChange(0)}
-          >
-            <Ionicons 
-              name={reservation.status === 0 ? "time" : "time-outline"} 
-              size={24} 
-              color={reservation.status === 0 ? "#fff" : "#FFC107"} 
+
+        {/* Acciones */}
+        {canCancel() && (
+          <View style={styles.actionsCard}>
+            <AsianButton
+              title="Cancelar Reserva"
+              onPress={handleCancel}
+              loading={isLoading}
+              variant="outline"
+              style={[styles.actionButton, styles.cancelButton]}
+              textStyle={styles.cancelButtonText}
+              icon={<Ionicons name="close-circle-outline" size={20} color={getColor('error')} />}
             />
-            <Text 
-              style={[
-                styles.statusButtonText, 
-                reservation.status === 0 && styles.activeStatusText
-              ]}
-            >
-              Pendiente
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.statusButton,
-              styles.confirmedButton,
-              reservation.status === 1 && styles.activeStatusButton
-            ]}
-            disabled={reservation.status === 1}
-            onPress={() => handleStatusChange(1)}
-          >
-            <Ionicons 
-              name={reservation.status === 1 ? "checkmark-circle" : "checkmark-circle-outline"} 
-              size={24} 
-              color={reservation.status === 1 ? "#fff" : "#4CAF50"} 
-            />
-            <Text 
-              style={[
-                styles.statusButtonText, 
-                reservation.status === 1 && styles.activeStatusText
-              ]}
-            >
-              Confirmada
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.statusButton,
-              styles.cancelledButton,
-              reservation.status === 2 && styles.activeStatusButton
-            ]}
-            disabled={reservation.status === 2}
-            onPress={() => handleStatusChange(2)}
-          >
-            <Ionicons 
-              name={reservation.status === 2 ? "close-circle" : "close-circle-outline"} 
-              size={24} 
-              color={reservation.status === 2 ? "#fff" : "#F44336"} 
-            />
-            <Text 
-              style={[
-                styles.statusButtonText, 
-                reservation.status === 2 && styles.activeStatusText
-              ]}
-            >
-              Cancelada
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.statusButton,
-              styles.completedButton,
-              reservation.status === 3 && styles.activeStatusButton
-            ]}
-            disabled={reservation.status === 3}
-            onPress={() => handleStatusChange(3)}
-          >
-            <Ionicons 
-              name={reservation.status === 3 ? "checkmark-done-circle" : "checkmark-done-circle-outline"} 
-              size={24} 
-              color={reservation.status === 3 ? "#fff" : "#9E9E9E"} 
-            />
-            <Text 
-              style={[
-                styles.statusButtonText, 
-                reservation.status === 3 && styles.activeStatusText
-              ]}
-            >
-              Completada
-            </Text>
-          </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Contactar restaurante */}
+        <View style={styles.actionsCard}>
+          <AsianButton
+            title={`Contactar Restaurante ${ASIAN_EMOJIS.PHONE}`}
+            onPress={handleContact}
+            variant="outline"
+            style={styles.actionButton}
+            icon={<Ionicons name="call-outline" size={20} color={getColor('primary.red')} />}
+          />
         </View>
-      </View>
-      
-      <View style={{ height: 40 }} />
-    </ScrollView>
+
+        {/* Reservar nuevamente */}
+        <View style={styles.actionsCard}>
+          <AsianButton
+            title={`Reservar Nuevamente ${ASIAN_EMOJIS.BAMBOO}`}
+            onPress={() => navigation.navigate('Restaurants')}
+            variant="primary"
+            style={styles.actionButton}
+            icon={<Ionicons name="restaurant-outline" size={20} color="white" />}
+          />
+        </View>
+      </ScrollView>
+    </ResponsiveContainer>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: getBackgroundColor('default'),
   },
-  header: {
-    backgroundColor: '#fff',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  section: {
-    backgroundColor: '#fff',
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  infoContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 8,
-    width: 80,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-    flex: 1,
-  },
-  notesContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 12,
-  },
-  notesText: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
-  },
-  actionsSection: {
-    backgroundColor: '#fff',
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  editButton: {
-    backgroundColor: '#4a90e2',
-  },
-  deleteButton: {
-    backgroundColor: '#e74c3c',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  statusSection: {
-    backgroundColor: '#fff',
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  statusButtonsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statusButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    borderWidth: 2,
-    width: '48%',
-    marginBottom: 12,
-  },
-  pendingButton: {
-    borderColor: '#FFC107',
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-  },
-  confirmedButton: {
-    borderColor: '#4CAF50',
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-  },
-  cancelledButton: {
-    borderColor: '#F44336',
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-  },
-  completedButton: {
-    borderColor: '#9E9E9E',
-    backgroundColor: 'rgba(158, 158, 158, 0.1)',
-  },
-  activeStatusButton: {
-    backgroundColor: '#4a90e2',
-    borderColor: '#4a90e2',
-  },
-  statusButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  activeStatusText: {
-    color: '#fff',
-  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: getBackgroundColor('default'),
   },
+
   loadingText: {
-    marginTop: 12,
+    marginTop: getSpacing('md'),
     fontSize: 16,
-    color: '#666',
+    color: getColor('secondary.bamboo'),
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
+
+  statusCard: {
+    backgroundColor: 'white',
+    margin: getSpacing('md'),
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-    padding: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  errorText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
+
+  statusBadge: {
+    paddingHorizontal: getSpacing('lg'),
+    paddingVertical: getSpacing('sm'),
+    borderRadius: 25,
+    marginBottom: getSpacing('sm'),
   },
-  retryButton: {
-    backgroundColor: '#FF6347',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
+
+  statusText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'white',
+  },
+
+  upcomingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: getColor('primary.gold'),
+    paddingHorizontal: getSpacing('md'),
+    paddingVertical: getSpacing('xs'),
+    borderRadius: 15,
+  },
+
+  upcomingText: {
+    marginLeft: getSpacing('xs'),
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+
+  infoCard: {
+    backgroundColor: 'white',
+    margin: getSpacing('md'),
+    marginTop: 0,
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: getColor('primary.black'),
+    marginBottom: getSpacing('lg'),
+  },
+
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: getSpacing('md'),
+  },
+
+  detailIcon: {
+    width: 40,
+    alignItems: 'center',
+    marginRight: getSpacing('sm'),
+    paddingTop: 2,
+  },
+
+  detailContent: {
+    flex: 1,
+  },
+
+  detailLabel: {
+    fontSize: 14,
+    color: getColor('secondary.bamboo'),
+    marginBottom: getSpacing('xs'),
+  },
+
+  detailValue: {
+    fontSize: 16,
+    color: getColor('primary.black'),
+    fontWeight: '500',
+  },
+
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: getSpacing('sm'),
+  },
+
+  infoText: {
+    marginLeft: getSpacing('sm'),
+    fontSize: 14,
+    color: getColor('secondary.bamboo'),
+    flex: 1,
+  },
+
+  actionsCard: {
+    backgroundColor: 'white',
+    margin: getSpacing('md'),
+    marginTop: 0,
+    borderRadius: getBorderRadius('md'),
+    padding: getSpacing('lg'),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  actionButton: {
+    marginBottom: getSpacing('sm'),
+  },
+
+  cancelButton: {
+    borderColor: getColor('error'),
+  },
+
+  cancelButtonText: {
+    color: getColor('error'),
   },
 });
 
