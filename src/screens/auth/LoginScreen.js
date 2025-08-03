@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Dimensions,
@@ -17,7 +18,7 @@ import AsianInput from '../../components/common/AsianInput';
 import { useAuth } from '../../context/auth/AuthContext';
 import { asianTheme } from '../../styles/asianTheme';
 import { validators } from '../../utils/helpers';
-import { ASIAN_EMOJIS, APP_CONFIG } from '../../utils/constants';
+import { ASIAN_EMOJIS, APP_CONFIG, API_CONFIG } from '../../utils/constants';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,6 +33,9 @@ const LoginScreen = ({ navigation }) => {
   
   const [formErrors, setFormErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Estado para diagnóstico de conexión
+  const [diagnosing, setDiagnosing] = useState(false);
   
   const deviceType = width < 768 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop';
   const isWeb = Platform.OS === 'web';
@@ -93,6 +97,16 @@ const LoginScreen = ({ navigation }) => {
     if (result.success) {
       // La navegación se maneja automáticamente por el contexto
       console.log('Login exitoso');
+    } else if (result.message?.includes('conexión')) {
+      // Si es un error de conectividad, mostrar diagnóstico
+      Alert.alert(
+        'Problema de conexión',
+        'No se pudo conectar con el servidor. ¿Deseas ejecutar el diagnóstico de red?',
+        [
+          { text: 'No, ahora no', style: 'cancel' },
+          { text: 'Sí, diagnosticar', onPress: handleDiagnostic }
+        ]
+      );
     }
   };
 
@@ -103,9 +117,85 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  // Función para diagnóstico de conexión
+  const handleDiagnostic = async () => {
+    setDiagnosing(true);
+    
+    try {
+      // Verificar conexión a internet
+      const internetCheckPromise = fetch('https://www.google.com/generate_204', { 
+        method: 'HEAD',
+        cache: 'no-cache',
+        mode: 'no-cors',
+        timeout: 5000
+      })
+      .then(() => true)
+      .catch(() => false);
+      
+      // Verificar conexión al servidor
+      const serverUrl = API_CONFIG.BASE_URL;
+      const serverCheckPromise = fetch(`${serverUrl}/ping`, { 
+        method: 'GET',
+        cache: 'no-cache',
+        headers: {
+          'Accept': 'application/json',
+        },
+        timeout: 5000
+      })
+      .then(response => response.ok)
+      .catch(() => false);
+      
+      // Esperar resultados
+      const [hasInternet, serverReachable] = await Promise.all([
+        internetCheckPromise.catch(() => false),
+        serverCheckPromise.catch(() => false)
+      ]);
+      
+      // Mostrar resultados
+      let message = '📡 Diagnóstico de conexión:\n\n';
+      
+      if (!hasInternet) {
+        message += '❌ No hay conexión a internet. Verifica tu WiFi o datos móviles.\n\n';
+      } else {
+        message += '✅ Conexión a internet: OK\n';
+        
+        if (!serverReachable) {
+          message += '❌ No se puede conectar al servidor.\n\n';
+          message += `📌 URL del servidor: ${API_CONFIG.BASE_URL}\n\n`;
+          
+          // Para dispositivos móviles, sugerir solución
+          if (Platform.OS !== 'web') {
+            message += 'Posibles soluciones:\n';
+            message += '• Verifica que el servidor esté en ejecución\n';
+            message += '• Si usas Expo Go, asegúrate de que tu dispositivo y PC estén en la misma red WiFi\n';
+            message += '• La URL del servidor podría ser incorrecta para dispositivos móviles\n';
+          }
+        } else {
+          message += '✅ Conexión al servidor: OK\n\n';
+          message += 'El problema podría estar en la autenticación o en la solicitud específica.';
+        }
+      }
+      
+      Alert.alert('Resultado del diagnóstico', message);
+      
+    } catch (error) {
+      Alert.alert(
+        'Error en diagnóstico', 
+        `No se pudo completar el diagnóstico: ${error.message}`
+      );
+    } finally {
+      setDiagnosing(false);
+    }
+  };
+
+  // Botón para alternar visibilidad de contraseña
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <>
-      <StatusBar style="dark" backgroundColor={asianTheme.colors.secondary.pearl} />
+      <StatusBar style="dark" />
       
       <KeyboardAvoidingView
         style={styles.container}
@@ -166,6 +256,15 @@ const LoginScreen = ({ navigation }) => {
                     color={asianTheme.colors.primary.red} 
                   />
                 }
+                rightIcon={
+                  <TouchableOpacity onPress={togglePasswordVisibility}>
+                    <Ionicons 
+                      name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                      size={20} 
+                      color={asianTheme.colors.grey.dark} 
+                    />
+                  </TouchableOpacity>
+                }
                 onKeyPress={handleKeyPress}
               />
 
@@ -178,6 +277,23 @@ const LoginScreen = ({ navigation }) => {
                 size={deviceType === 'mobile' ? 'medium' : 'large'}
                 style={styles.loginButton}
               />
+
+              {/* Diagnóstico de conexión */}
+              <TouchableOpacity
+                style={styles.diagnosticButton}
+                onPress={handleDiagnostic}
+                disabled={diagnosing || isLoading}
+              >
+                <Text style={styles.diagnosticText}>
+                  {diagnosing ? 'Diagnosticando...' : '¿Problemas de conexión?'}
+                </Text>
+                <Ionicons 
+                  name={diagnosing ? "sync" : "wifi-outline"} 
+                  size={16} 
+                  color={asianTheme.colors.secondary.bamboo}
+                  style={{ marginLeft: 8 }}
+                />
+              </TouchableOpacity>
 
               {/* Separador */}
               <View style={styles.separator}>
@@ -194,6 +310,17 @@ const LoginScreen = ({ navigation }) => {
                 size={deviceType === 'mobile' ? 'medium' : 'large'}
                 disabled={isLoading}
               />
+              
+              {/* Link para recuperar contraseña */}
+              <TouchableOpacity 
+                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.navigate('ForgotPassword')}
+                disabled={isLoading}
+              >
+                <Text style={styles.forgotPasswordText}>
+                  ¿Olvidaste tu contraseña?
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Footer */}
@@ -201,6 +328,14 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.footerText}>
                 {APP_CONFIG.VERSION} • Hecho con {ASIAN_EMOJIS.CHERRY} para amantes de la comida asiática
               </Text>
+              
+              {/* Debug info en desarrollo */}
+              {__DEV__ && (
+                <View style={styles.debugInfo}>
+                  <Text style={styles.debugText}>API: {API_CONFIG.BASE_URL}</Text>
+                  <Text style={styles.debugText}>Platform: {Platform.OS}</Text>
+                </View>
+              )}
             </View>
           </ScrollView>
         </ResponsiveContainer>
@@ -264,6 +399,20 @@ const styles = StyleSheet.create({
     marginBottom: asianTheme.spacing.md,
   },
   
+  // Diagnóstico
+  diagnosticButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  
+  diagnosticText: {
+    color: asianTheme.colors.secondary.bamboo,
+    fontSize: 14,
+  },
+  
   separator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -282,6 +431,19 @@ const styles = StyleSheet.create({
     marginHorizontal: asianTheme.spacing.md,
   },
   
+  // Forgot Password
+  forgotPasswordContainer: {
+    alignItems: 'center',
+    marginTop: asianTheme.spacing.md,
+    paddingVertical: 8,
+  },
+  
+  forgotPasswordText: {
+    ...asianTheme.typography.styles.caption,
+    color: asianTheme.colors.primary.red,
+    textDecorationLine: 'underline',
+  },
+  
   // Footer
   footer: {
     alignItems: 'center',
@@ -293,6 +455,20 @@ const styles = StyleSheet.create({
     color: asianTheme.colors.secondary.bamboo,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  
+  // Debug info
+  debugInfo: {
+    marginTop: asianTheme.spacing.md,
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    opacity: 0.7,
+  },
+  
+  debugText: {
+    fontSize: 10,
+    color: asianTheme.colors.grey.dark,
   },
   
   // Responsive Styles

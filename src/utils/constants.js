@@ -1,8 +1,34 @@
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+// Función para obtener la URL correcta según el entorno
+const getApiUrl = () => {
+  if (__DEV__) {
+    // Entorno de desarrollo
+    if (Platform.OS === 'android') {
+      // En Expo Go para Android, usa la IP del ordenador host
+      // Esto funciona tanto para emulador como para dispositivo físico conectado a la misma red
+      const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest?.debuggerHost;
+      const localIp = debuggerHost?.split(':')[0] || 'http://127.0.0.1:8000/api'; // Reemplaza con tu IP si necesario
+      
+      return `http://${localIp}:8000/api`;
+    } 
+    else if (Platform.OS === 'ios') {
+      // En iOS con Expo Go
+      return 'http://localhost:8000/api';
+    }
+    // Web
+    return 'http://localhost:8000/api';
+  }
+  
+  // Producción
+  return 'https://tu-api-produccion.com/api';
+};
+
 // Configuración y constantes de la aplicación
 export const API_CONFIG = {
-  // Cambia esta URL por la de tu backend Laravel
-  BASE_URL: 'http://localhost:8000/api', // 🔄 CAMBIAR POR TU URL
-  TIMEOUT: 10000,
+  BASE_URL: getApiUrl(),
+  TIMEOUT: 30000,
   
   // Endpoints
   ENDPOINTS: {
